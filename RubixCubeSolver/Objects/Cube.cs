@@ -87,7 +87,7 @@ namespace RubixCubeSolver.Objects
         *     2          1
         */
 
-        private static uint[] indices = 
+        private static uint[] indices =
             {  /// Note that we start from 0                                     
 
                 /// Front Face
@@ -119,7 +119,7 @@ namespace RubixCubeSolver.Objects
         /// --- ADDITIONAL FIELDS
         //private static Vector3 color = new Vector3(1.0f, 0.9f, 0.0f); //R G B
 
-        public Cube(float scale = 1.0f, Vector3? position = null, Vector3? color = null) : base(vertices, indices, scale, position, color) { }
+        public Cube(Shader shader, float scale = 1.0f, Vector3? position = null, Vector3? color = null) : base(vertices, indices, shader, scale, position, color) { }
 
     }
 }

@@ -8,13 +8,13 @@ namespace RubixCubeSolver.Objects
     /// This abstract class, will allow for all types of GameObjects that can be rendered, to exist in the same List. Any class that inherits from GameObject, will become one. GameObjects are any objects, with vertices and indices, and a position.
     /// Abstract classes cannot be instantiated, but can be inherited
     /// </summary>
-    public abstract class GameObject
+    public abstract class GameObject : GameMaster.IGameObject
     {
         /// Necessary Parameters - They have no defaults, and a gameobject cannot be made without them
         static float[] objectVertices;
         static uint[] objectIndices;
 
-        ///  Every GameObject, can be referenced by it's VAO Handle
+        ///  Every GameObject, can be referenced by it's VAO Handle. This also stores many relavant settings.
         int VAO;
 
         /// Special Parameters - They don't exist until a single instance of the GameObject Type is created, then the same instance exists and is reused until none of the GameObject Type exists, after which it deletes itself
@@ -31,13 +31,17 @@ namespace RubixCubeSolver.Objects
         /// Only Information for Other Functions to work properly
         /// Total Number of these objects
         private static int count;
-        /// The GameObject Constructor. Here is where all the information is set (including default values)
-        public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, float objectScaleIn = 1.0f, Vector3? objectPosIn = null, Vector3? objectColIn = null)
+        
+        /// The GameObject Constructor. Here is where all the information is initialized and set (including default values), upon creation of the object
+        public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shader, float objectScaleIn = 1.0f, Vector3? objectPosIn = null, Vector3? objectColIn = null)
         {
             objectVertices = objectVerticesIn;
             objectIndices = objectIndicesIn;
 
+            VAO = SetupVAO(genAndGetVBOHandle(), genAndGetEBOHandle(), shader);
+
             objectScale = objectScaleIn;
+
             objectPos = objectPosIn ?? new Vector3(0.0f);               /// (0, 0, 0) is the centre of the world
             objectCol = objectColIn ?? new Vector3(1.0f, 0.3f, 0.31f);  /// R G B  This is a pink color
 
@@ -120,6 +124,11 @@ namespace RubixCubeSolver.Objects
             EBO = -1;
         }
 
+        public int getVAOHandle()
+        {
+            return VAO;
+        }
+
         public Vector3 getPosition()
         {
             return objectPos;
@@ -154,6 +163,35 @@ namespace RubixCubeSolver.Objects
         public void setCount(int value)
         {
             count = value;
+        }
+
+        public void DisposeThisGameObject()
+        {
+            /// If there aren't any more objects of this type, delete the GameObject Type's buffers
+            if (getCount() == 0)
+            {
+                /// Delete Buffer with handle ID
+                GL.DeleteBuffer(genAndGetVBOHandle());
+
+                /// Delete (static) VBO Handle in the GameObject Type
+                delVBOHandle();
+
+                /// Delete Buffer with handle ID
+                GL.DeleteBuffer(genAndGetEBOHandle());
+
+                /// Delete (static) EBO Handle in the GameObject Type
+                delEBOHandle();
+            }
+
+            /// Each GameObject has a unique VAO, so this will always be deleted whenever this function is called
+            //GL.DeleteVertexArray(myGameObjectsVAOHandles[gameObjectIndex]);
+            GL.DeleteVertexArray(getVAOHandle());
+
+            /// Decrement the count of this type of GameObjects, currently present
+            setCount(getCount() - 1);
+
+            /// Delete GameObject with gameObjectIndex
+            GameMaster.getGameObjects().Remove(this);
         }
 
         /// ADDITIONAL METHODS (and probably only for debugging)
@@ -194,6 +232,18 @@ namespace RubixCubeSolver.Objects
         ///</summary>
         private int SetupVAO(int VBO, int EBO, Shader objectShader)
         {
+            /// Both checks below make sure an error occurs if the object VBO and EBO aren't generated/obtained properly
+            /// -1 is the value the VBO and EBO Handles hold when they don't exist
+            if (VBO == -1)
+            {
+                throw new Exception("VBO of object not correctly generated");
+            }
+
+            if (EBO == -1)
+            {
+                throw new Exception("EBO of object not correctly generated");
+            }
+
             /// The Handle to our VAO.
             int HandleVAO = GL.GenVertexArray();
 

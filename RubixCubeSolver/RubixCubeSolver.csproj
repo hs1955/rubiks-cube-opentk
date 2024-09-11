@@ -47,8 +47,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Objects\Game2.cs" />
-    <Compile Include="Objects\Game1.cs" />
+    <Compile Include="Objects\CompositeGameObject.cs" />
+    <Compile Include="Objects\RubiksCubePiece.cs" />
+    <Compile Include="Objects\GameMaster.cs" />
+    <Compile Include="Objects\Game.cs" />
     <Compile Include="Objects\Cube.cs" />
     <Compile Include="Objects\GameObject.cs" />
     <Compile Include="Objects\Shader.cs" />
