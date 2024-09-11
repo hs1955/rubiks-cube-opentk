@@ -92,11 +92,18 @@ namespace RubixCubeSolver.Objects
             ///   Far-clipping. Any vertices farther away from the camera than this value will be clipped.
             setProjection(Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45f), Width / (float)Height, 0.1f, 100.0f));
 
-
             AddGameObjects(new Cube(_lightingShader));
+            AddGameObjects(new Plane(_lightingShader, position: new Vector3(0.5f), color: new Vector3(0.7f, 0.6f, 0.3f)));
+
             //AddGameObjects(new Cube(_lightingShader , 1.3f, new Vector3(1.0f), new Vector3(1.0f)));
 
-            //AddGameObjects(new RubiksCubePiece());
+            //AddGameObjects(new CompositeTest(_lightingShader, 2, scale: 0.5f , position: new Vector3(-0.5f, 0.0f, 0.0f)));
+
+            //AddGameObjects(new RubiksCubePiece(_lightingShader, (int)RubiksCubePiece.RubiksCubeColors.Orange));
+
+            //AddGameObjects(new RubiksCubePiece(_lightingShader, (int)RubiksCubePiece.RubiksCubeColors.Red, (int)RubiksCubePiece.RubiksCubeColors.Blue, (int)RubiksCubePiece.RubiksCubeColors.Orange));
+
+            //AddGameObjects(new RubiksCubePiece(_lightingShader));
 
             base.OnLoad(e);
         }
@@ -106,7 +113,9 @@ namespace RubixCubeSolver.Objects
             /// Clears the screen, using color set in OnLoad
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            DrawAllGameObjects(_lightingShader, omitVAOs);
+            DrawAllGameObjects(omitVAOs);
+
+            //DrawWorld();
 
             /// One area is displayed, while the other is being rendered to. Then, when you call SwapBuffers, the two are reversed. A single-buffered context could have issues such as screen tearing.
             Context.SwapBuffers();

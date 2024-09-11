@@ -6,16 +6,54 @@ using System.Linq;
 
 namespace RubixCubeSolver.Objects
 {
-    public static class GameMaster // : GameWindow
+    public static class GameMaster
     {
-        public interface IGameObject { };
+        public interface IGameObject { }
+
+        /*
+        public static GameObject ToGameObject(IGameObject listObject)
+        {
+            if (listObject is GameObject)
+            {
+                GameObject theGameObject = (GameObject)listObject;
+            }
+            
+            else if (listObject is CompositeGameObject)
+            {
+                CompositeGameObject theGameObject = (CompositeGameObject)listObject;
+            }
+
+        }
+        //*/
 
         /// List of GameObjects
-        static List<GameObject> myGameObjects = new List<GameObject>();
+        //static List<GameObject> myGameObjects = new List<GameObject>();
+        static List<IGameObject> myGameObjects = new List<IGameObject>();
 
-        public static List<GameObject> getGameObjects()
+        public static ref List<IGameObject> getGameObjects()
         {
-            return myGameObjects;
+            return ref myGameObjects;
+        }
+
+        public static List<GameObject> GameObjectsOnlyList()
+        {
+            List<GameObject> theGameObjects = new List<GameObject>();
+
+            foreach (var item in myGameObjects)
+            {
+                if (item is GameObject)
+                {
+                    theGameObjects.Add((GameObject)item);
+                }
+
+                else if (item is CompositeGameObject)
+                {
+                    theGameObjects.AddRange(((CompositeGameObject)item).ConvertToGameObjects());
+                }
+            }
+
+            return theGameObjects;
+
         }
 
         /// Declaration of Matrices for Conversions between Coordinate Systems
@@ -133,7 +171,7 @@ namespace RubixCubeSolver.Objects
         /// </summary>
         /// <param name="theGameObject"></param>
         /// <param name="number"></param>
-        public static void AddGameObjects(GameObject theGameObject, int number = 1)
+        public static void AddGameObjects(IGameObject theGameObject, int number = 1)
         {
             for (int i = 0; i < number; i++)
             {
@@ -142,18 +180,6 @@ namespace RubixCubeSolver.Objects
 
             }
         }
-
-        /*
-        public static void AddGameObjects(CompositeGameObject theGameObject, int number = 1)
-        {
-            for (int i = 0; i < number; i++)
-            {
-                /// Add theGameObject to the list of GameObjects
-                myGameObjects.Add(theGameObject);
-
-            }
-        }
-        //*/
 
         /// <summary>
         /// Deletes a GameObject using its VAO Handle
@@ -161,17 +187,6 @@ namespace RubixCubeSolver.Objects
         /// <param name="objectVAOHandle"> The VAO Handle of the GameObject </param>
         public static void DisposeGameObjectWithVAO(int objectVAOHandle)
         {
-            #region OLD CHECK (Irrelavant now)
-            /*
-            /// Checks to see if the Number of VAOHandles matches the Number of Game Objects. 
-            /// If not, the data has desynced, and an error will occur
-            if (myGameObjects.Count != myGameObjects.Count)
-            {
-                throw new IndexOutOfRangeException("GameObject Information List do not have the same length with VAOHandles List");
-            }
-            //*/
-            #endregion
-
             /// Converts the given object VAO, to the Index of the Object VAO in the myGameObjectsVAOHandles List
             int gameObjectIndex = ObtainGameObjectIndex(objectVAOHandle);
 
@@ -185,16 +200,7 @@ namespace RubixCubeSolver.Objects
         /// <param name="objectIndex"> The Index of the GameObject </param>
         public static void DisposeGameObjectWithIndex(int gameObjectIndex)
         {
-            #region OLD CHECK (Irrelavant now)
-            /*
-            /// Checks to see if the Number of VAOHandles matches the Number of Game Objects. 
-            /// If not, the data has desynced, and an error will occur
-            if (myGameObjects.Count != myGameObjects.Count)
-            {
-                throw new IndexOutOfRangeException("GameObject Information List do not have the same length with VAOHandles List");
-            }
-            //*/
-            #endregion
+            IGameObject theGameObject = myGameObjects[gameObjectIndex];
 
             /// Checks to see if a GameObject exists at this index
             if (myGameObjects.ElementAtOrDefault(gameObjectIndex) == default)
@@ -211,41 +217,17 @@ namespace RubixCubeSolver.Objects
                 }
             }
 
-            /// Get the GameObject to deleted
-            GameObject theGameObject = myGameObjects[gameObjectIndex];
-            /// If multiple items are added at once, they will share the same VBO and EBO Handles, 
-            /// so these cannot be deleted until all the declarations of the same VBO and EBO Handles are deleted.
-            /// However, if trueValue is true, then bypass all checks, since all elements will be deleted.
-
-            /// If there aren't any more objects of this type, delete the GameObject Type's buffers
-            if (theGameObject.getCount() == 0)
+            /// If this GameObject is a regular GameObject
+            if (theGameObject is GameObject)
             {
-                /// Delete Buffer with handle ID
-                GL.DeleteBuffer(theGameObject.genAndGetVBOHandle());
-
-                /// Delete (static) VBO Handle in the GameObject Type
-                theGameObject.delVBOHandle();
-
-                /// Delete Buffer with handle ID
-                GL.DeleteBuffer(theGameObject.genAndGetEBOHandle());
-
-                /// Delete (static) EBO Handle in the GameObject Type
-                theGameObject.delEBOHandle();
+                ((GameObject)theGameObject).DisposeThisGameObject();
             }
-
-            /// Each GameObject has a unique VAO, so this will always be deleted whenever this function is called
-            //GL.DeleteVertexArray(theGameObject.getVAOHandle());
-            GL.DeleteVertexArray(theGameObject.getVAOHandle());
-
-            /// Decrement the count of this type of GameObjects, currently present
-            theGameObject.setCount(theGameObject.getCount() - 1);
-
-            /// Delete GameObject with gameObjectIndex
-            myGameObjects.RemoveAt(gameObjectIndex);
-
-            /// Delete Gameobject VAO Handle from myGameObjectsVAOHandles
-            //myGameObjectsVAOHandles.RemoveAt(gameObjectIndex);
-
+            
+            /// If this GameObject is a CompositeGameObject
+            else if (theGameObject is CompositeGameObject)
+            {
+                ((CompositeGameObject)theGameObject).DisposeThisCompositeGameObject();
+            }
         }
 
         /// <summary>
@@ -271,17 +253,55 @@ namespace RubixCubeSolver.Objects
             /// If there are some objects which cannot be deleted
             else
             {
-                /// For each GameObject
+                /// For each possible VAO
                 for (int i = 1; i < VAOCountBeforeDeletion; i++)
                 {
-                    /// If it exists in the omitVAOs, do not delete
                     /// If a gameObject that exists has this VAO, and the VAO is not in the list of VAOs to not delete
-                    if (myGameObjects.Exists(gameObject => gameObject.getVAOHandle() == i) && !omitVAOs.Contains(i))
+                    if (myGameObjects.Exists(gameObject => (gameObject is GameObject) && ((GameObject)gameObject).getVAOHandle() == i) && !omitVAOs.Contains(i))
                     {
                         /// Delete this particular GameObject, by using it's VAO
                         DisposeGameObjectWithVAO(i);
                     }
+
+                    /// This extremely long statement, first checks if there is a CompositeGameObject in the list.
+                    /// If there is then get the GameObjects that make it up
+                    /// and then check those to see if any of them have a VAO which must be omitted
+                    /// 
+                    /// This method is probably extremely slow, but it is also very flexible: I can interact with a list with both normal GameObjects and CompositeGameObjects, using exactly the same methods.
+                    else if (myGameObjects.Exists(gameObject => (gameObject is CompositeGameObject) && ((CompositeGameObject)gameObject).ConvertToGameObjects().Exists(gameObject1 => (gameObject1.getVAOHandle() == i) && !omitVAOs.Contains(i)) ))
+                    {
+                        /// Delete this particular GameObject, by using it's VAO
+                        DisposeGameObjectWithVAO(i);
+                    }
+
                 }
+
+                /*
+                /// For each GameObject
+                for (int j = 0; j < VAOCountBeforeDeletion; j++)
+                {
+                    IGameObject gameObject = myGameObjects[j];
+
+                    if (gameObject is GameObject)
+                    {
+                        /// This line converts requested VAO Handle of an object to the VAO Handle Index in the list
+                        if (((GameObject)gameObject).getVAOHandle() == objectVAOHandle)
+                        {
+                            return i;
+                        }
+                    }
+
+                    else if (gameObject is CompositeGameObject)
+                    {
+                        gameObjectIndex = ((CompositeGameObject)gameObject).ConvertToGameObjects().FindIndex(thisGameObject => thisGameObject.getVAOHandle() == objectVAOHandle);
+
+                        if (gameObjectIndex != -1)
+                        {
+                            return gameObjectIndex;
+                        }
+                    }
+                }
+                //*/
             }
         }
 
@@ -293,41 +313,34 @@ namespace RubixCubeSolver.Objects
         /// <returns></returns>
         public static int ObtainGameObjectIndex(int objectVAOHandle)
         {
-            /// When deleting GameObjects from the list, the Index of the VAO Handle in myGameObjectsVAOHandles would change
-            /// myGameObjectsVAOHandles stores all the values of the objects original VAOs (in the order of creation of each GameObject), so even when some GameObjects are deleted, the same object can be referenced with its VAO Handle using this function
-            /// This function stops us being forced to use the Index of the VAO Handle every time (which is good since this can change), and simpily use the actual VAO Handle of the object (which never changes for the lifespan of the Game Object)
-
-            /// This line converts requested VAO Handle of an object to the VAO Handle Index in the list
-            /// This variable will hold our index of the VAO Handle, which is the same as the index of the GameObject in the list of gameobjects
-            int gameObjectIndex = myGameObjects.FindIndex(gameObject => gameObject.getVAOHandle() == objectVAOHandle);
-
-            /// If the requested VAOHandle was not found, throw an error
-            if (gameObjectIndex == -1)
+            for (int i = 0; i < myGameObjects.Count; i++)
             {
-                throw new IndexOutOfRangeException($"GameObject ID: {objectVAOHandle} not found in myGameObjectsIDs");
+                IGameObject gameObject = myGameObjects[i];
+
+                if (gameObject is GameObject)
+                {
+                    /// This line converts requested VAO Handle of an object to the VAO Handle Index in the list
+                    if (((GameObject)gameObject).getVAOHandle() == objectVAOHandle)
+                    {
+                        return i;
+                    }
+                }
+
+                else if (gameObject is CompositeGameObject)
+                {
+                    int gameObjectIndex = ((CompositeGameObject)gameObject).ConvertToGameObjects().FindIndex(thisGameObject => thisGameObject.getVAOHandle() == objectVAOHandle);
+
+                    if (gameObjectIndex != -1)
+                    {
+                        /// This should be the index of the CompositeGameObject. 
+                        /// Select a CompositeGameObject using the VAO of any of the GameObjects the Composite holds
+                        return i;
+                    }
+                }
+
             }
 
-            return gameObjectIndex;
-        }
-
-        public static bool CheckGameObjectExists(int objectVAOHandle)
-        {
-            /// When deleting GameObjects from the list, the Index of the VAO Handle in myGameObjectsVAOHandles would change
-            /// myGameObjectsVAOHandles stores all the values of the objects original VAOs (in the order of creation of each GameObject), so even when some GameObjects are deleted, the same object can be referenced with its VAO Handle using this function
-            /// This function stops us being forced to use the Index of the VAO Handle every time (which is good since this can change), and simpily use the actual VAO Handle of the object (which never changes for the lifespan of the Game Object)
-
-            /// This line converts requested VAO Handle of an object to the VAO Handle Index in the list
-            /// This variable will hold our index of the VAO Handle, which is the same as the index of the GameObject in the list of gameobjects
-            if (myGameObjects.Exists(gameObject => gameObject.getVAOHandle() == objectVAOHandle))
-            {
-                return true;
-            }
-
-            else
-            {
-                return false;
-            }
-
+            return -1;            
         }
 
         #region OLD SETUP VAO
@@ -400,18 +413,19 @@ namespace RubixCubeSolver.Objects
         /// <param name="lightColorInput"> Defaults to (1, 1, 1), AKA pure white light </param>
         public static void Draw(int handleVAO, uint[] indices, Shader shader, Vector3? Position = null, float Scale = 1.0f, Vector3? Color = null, Vector3? lightColor = null)
         {
-            /// Checks to see if the given VAO is valid
-            if (!CheckGameObjectExists(handleVAO))
+            /// This is a check for if the VAO exists, otherwise the program will crash within this function
+            if (ObtainGameObjectIndex(handleVAO) == -1)
             {
-                throw new Exception($"The given VAO Handle: {handleVAO} does not exist");
+                /// If the function has not returned anything by this point, then the VAO does not exist, so an error should be thrown
+                throw new IndexOutOfRangeException($"No GameObject was found with the VAO: {handleVAO}");
             }
 
             /// Sets certain values to their defaults
-            Vector3 objectPosition = Position ?? new Vector3(0.0f, 0.0f, 0.0f);     /// The centre of the world
+            Vector3 objectPosition = Position ?? new Vector3(0.0f, 0.0f, 0.0f);     /// Default: The centre of the world
 
-            Vector3 objectColor = Color ?? new Vector3(1.0f, 0.3f, 0.31f);          /// This is a pink color
+            Vector3 objectColor = Color ?? new Vector3(1.0f, 0.3f, 0.31f);          /// Default: This is a pink color
 
-            Vector3 objectlightColor = lightColor ?? new Vector3(1.0f, 1.0f, 1.0f); /// This is a white color
+            Vector3 objectlightColor = lightColor ?? new Vector3(1.0f, 1.0f, 1.0f); /// Default: This is a white color
 
             /// Load the VAO (which contains our VBO, EBO, and Shader)
             GL.BindVertexArray(handleVAO);
@@ -460,16 +474,30 @@ namespace RubixCubeSolver.Objects
         /// <param name="trueGameObjectIndex"> Is this the objects actual ID? Default: false 
         /// (When GameObjects are deleted, the remaining objects get their actual IDs reduced, meaining the actual ID of each GameObject changes. Set to false if you wish to draw a specific GameObject)</param>
         /// <param name="lightColor"> The color of light on the object </param>
-        public static void DrawWithVAO(int objectVAOHandle, Shader shader, Vector3? lightColor = null)
+        public static void DrawWithVAO(int objectVAOHandle, Vector3? lightColor = null)
         {
             /// Obtain the Index of the VAO Handle in the myGameObjectsVAOHandles List
             /// This index is equivelant to the index of the GameObject in the myGameObjects List
             int gameObjectIndex = ObtainGameObjectIndex(objectVAOHandle);
 
             /// Obtain the GameObject with the requested VAO
-            GameObject theGameObject = myGameObjects[gameObjectIndex];
+            IGameObject theGameObject = myGameObjects[gameObjectIndex];
 
-            Draw(objectVAOHandle, theGameObject.getIndices(), shader, theGameObject.getPosition(), theGameObject.getScale(), theGameObject.getColor(), lightColor);
+            if (theGameObject is GameObject)
+            {
+                Draw(objectVAOHandle, ((GameObject)theGameObject).getIndices(), ((GameObject)theGameObject).getShader(), ((GameObject)theGameObject).getPosition(), ((GameObject)theGameObject).getScale(), ((GameObject)theGameObject).getColor(), lightColor);
+            }
+
+            else if (theGameObject is CompositeGameObject)
+            {
+                foreach (var item in ((CompositeGameObject)theGameObject).ConvertToGameObjects())
+                {
+                    theGameObject = item;
+
+                    Draw(objectVAOHandle, ((GameObject)theGameObject).getIndices(), ((GameObject)theGameObject).getShader(), ((GameObject)theGameObject).getPosition(), ((GameObject)theGameObject).getScale(), ((GameObject)theGameObject).getColor(), lightColor);
+                }
+            }
+
         }
 
         /// <summary>
@@ -477,19 +505,33 @@ namespace RubixCubeSolver.Objects
         /// </summary>
         /// <param name="objectIndex"> The object Index </param>
         /// <param name="lightColor"> The color of light on the object </param>
-        public static void DrawWithIndex(int gameObjectIndex, Shader shader, Vector3? lightColor = null)
+        public static void DrawWithIndex(int gameObjectIndex, Vector3? lightColor = null)
         {
             /// Obtain the GameObject with the requested VAO
-            GameObject theGameObject = myGameObjects[gameObjectIndex];
+            IGameObject theGameObject = myGameObjects[gameObjectIndex];
 
-            Draw(theGameObject.getVAOHandle(), theGameObject.getIndices(), shader, theGameObject.getPosition(), theGameObject.getScale(), theGameObject.getColor(), lightColor);
+            if (theGameObject is GameObject)
+            {
+                GameObject gameObject = (GameObject)theGameObject;
+
+                Draw(gameObject.getVAOHandle(), gameObject.getIndices(), gameObject.getShader(), gameObject.getPosition(), gameObject.getScale(), gameObject.getColor(), lightColor);
+            }
+
+            else if (theGameObject is CompositeGameObject)
+            {
+                foreach (GameObject gameObjectPiece in ((CompositeGameObject)theGameObject).ConvertToGameObjects())
+                {
+                    Draw(gameObjectPiece.getVAOHandle(), gameObjectPiece.getIndices(), gameObjectPiece.getShader(), gameObjectPiece.getPosition(), gameObjectPiece.getScale(), gameObjectPiece.getColor(), lightColor);
+                }
+            }
+
         }
 
         /// <summary>
         /// Draw all the GameObjects currently added in game
         /// </summary>
         /// <param name="omitVAOs"> The VAOs of objects which should not be drawn </param>
-        public static void DrawAllGameObjects(Shader shader, List<int> omitVAOs = null)
+        public static void DrawAllGameObjects(List<int> omitVAOs = null)
         {
             /// If there's nothing to omit from being drawn
             if (omitVAOs == null || omitVAOs.Count == 0)
@@ -498,7 +540,7 @@ namespace RubixCubeSolver.Objects
                 for (int i = 0; i < myGameObjects.Count; i++)
                 {
                     /// Again, since we aren't after a specific object, it makes sense to draw using the index of the game object in the myGameObjects List
-                    DrawWithIndex(i, shader);
+                    DrawWithIndex(i);
                 }
             }
 
@@ -509,15 +551,31 @@ namespace RubixCubeSolver.Objects
                 for (int i = 1; i < myGameObjects.Count + 1; i++)
                 {
                     /// If a gameobject with the specified VAO exists, and the VAO is not in the list of VAOs to not draw
-                    if (CheckGameObjectExists(i) && !omitVAOs.Contains(i))
+                    if ( (ObtainGameObjectIndex(i) != -1) && !omitVAOs.Contains(i))
                     {
                         /// Draw this particular GameObject, by using it's VAO
-                        DrawWithVAO(i, shader);
+                        DrawWithVAO(i);
                     }
                 }
             }
         }
 
+        /*
+        public static void DrawWorld(Vector3? lightColorIn = null)
+        {
+            CompositeGameObject world = new CompositeGameObject();
+
+            Vector3 lightColor = lightColorIn ?? new Vector3(1.0f);
+
+            world.setGameObjects(myGameObjects);
+
+            foreach (GameObject gameObjectPiece in world.ConvertToGameObjects())
+            {
+                Draw(gameObjectPiece.getVAOHandle(), gameObjectPiece.getIndices(), gameObjectPiece.getShader(), gameObjectPiece.getPosition(), gameObjectPiece.getScale(), gameObjectPiece.getColor(), lightColor);
+            }
+
+        }
+        //*/
         public static void QuitApp()
         {
             //Run any code which I want to, before exitting the application, most likely message box
