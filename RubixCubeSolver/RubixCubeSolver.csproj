@@ -47,15 +47,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Objects\AppWindow.cs" />
+    <Compile Include="Objects\Game2.cs" />
+    <Compile Include="Objects\Game1.cs" />
     <Compile Include="Objects\Cube.cs" />
+    <Compile Include="Objects\GameObject.cs" />
     <Compile Include="Objects\Shader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="OpenGL_Shaders\shader.frag" />
+    <None Include="OpenGL_Shaders\lighting.frag" />
     <None Include="OpenGL_Shaders\shader.vert" />
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />

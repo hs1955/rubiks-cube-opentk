@@ -1,22 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using RubixCubeSolver.Objects;
-using OpenTK;
+﻿using RubixCubeSolver.Objects;
 
-//VERSION 1
+/// VERSION 2
 namespace RubixCubeSolver
 {
     class Program
     {
+        /// The width of the game window, in pixels
         static int width = 800;
+
+        /// This function should be used if any other class wishes to gain access to this value
+        /// (I've done this for every field, for Increased Security of Data)
         static public int getWidth()
         {
             return width;
         }
 
+        /// The height of the game window, in pixels
         static int height = 600;
         static public int getHeight()
         {
@@ -25,11 +24,12 @@ namespace RubixCubeSolver
 
         static void Main(string[] args)
         {
-            // This line creates a new instance, and wraps the instance in a using statement so it's automatically disposed once we've exited the block.
-            using (AppWindow window = new AppWindow(width, height, "Rubik's Cube Solver"))
+            /// This line creates a new instance, and wraps the instance in a using statement so it's automatically disposed once we've exited the block.
+            using (Game window = new Game(width, height, "Rubik's Cube Solver"))
             { 
-                //Run takes a double, which is how many frames per second it should strive to reach.
-                //You can leave that out and it'll just update as fast as the hardware will allow it.
+                /// Run the window
+                /// The 1st argument is the rate at which the program should update per second
+                /// The 2nd argument is the frames per second the program should strive to reach
                 window.Run(60.0, 60.0);
             }
         }
