@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"workbench.colorCustomizations": {
+			"[Monokai Vibrant]": {
+				"activityBar.foreground": "#ffffff",
+				"diffEditor.removedTextBackground": "#ff00dd30",
+				"diffEditor.insertedTextBackground": "#00ffd520"
+			},
+			"editor.lineHighlightBackground": "#1073cf2d",
+			"editor.lineHighlightBorder": "#9fced11f",
+			"activityBar.background": "#44195A",
+			"titleBar.activeBackground": "#5F237F",
+			"titleBar.activeForeground": "#FCF8FD"
+		}
+	}
+}
