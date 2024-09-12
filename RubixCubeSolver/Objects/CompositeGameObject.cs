@@ -1,4 +1,5 @@
 ﻿using OpenTK;
+using System;
 using System.Collections.Generic;
 
 namespace RubixCubeSolver.Objects
@@ -16,13 +17,73 @@ namespace RubixCubeSolver.Objects
         {
             gameObjects.Clear();
             gameObjects.AddRange(theGameObjects);
+
+            CheckForInverted();
+        }
+
+        /// <summary>
+        /// This function is solely responsible for stopping a particular bug, where individual GameObjects, that are turned upsidedown, while being added, turn in the Horizontal Direction, the opposite way to the rest of the object.
+        /// </summary>
+        private void CheckForInverted()
+        {
+            //*
+            foreach (GameMaster.IGameObject aGameObject in gameObjects)
+            {
+                if (aGameObject is GameObject)
+                {
+                    if (!(Math.Abs(((GameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) == 180f))
+                    {
+                        ((GameObject)aGameObject).setInvertRotation(((GameObject)aGameObject).getInvertRotation() * -1);
+                    }
+
+                }
+
+                else if (aGameObject is CompositeGameObject)
+                {
+                    /// Do the same for it's subordinates
+                    ((CompositeGameObject)aGameObject).CheckForInverted();
+
+                    if (!(Math.Abs(((CompositeGameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) == 180f))
+                    {
+                        ((CompositeGameObject)aGameObject).setInvertRotation(((CompositeGameObject)aGameObject).getInvertRotation() * -1);
+                    }
+                }
+
+            }
+            //*/
+
+            /*
+            foreach (GameMaster.IGameObject aGameObject in gameObjects)
+            {
+                if (aGameObject is GameObject)
+                {
+                    if (!(Math.Abs(((GameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) > 90f))
+                    {
+                        ((GameObject)aGameObject).setInvertRotation(((GameObject)aGameObject).getInvertRotation() * -1);
+                    }
+
+                }
+
+                else if (aGameObject is CompositeGameObject)
+                {
+                    /// Do the same for it's subordinates
+                    ((CompositeGameObject)aGameObject).CheckForInverted();
+
+                    if (!(Math.Abs(((CompositeGameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) > 90f))
+                    {
+                        ((CompositeGameObject)aGameObject).setInvertRotation(((CompositeGameObject)aGameObject).getInvertRotation() * -1);
+                    }
+                }
+                
+            }
+            //*/
         }
 
         /// These Attributes Have Defaults
         Vector3 objectPos;
         float objectScale;
         float[] angles = new float[2];
-        Matrix4 myModel = new Matrix4();
+        private int invertRotation = 1;
 
         /// Total Number of these objects
         private static int count;        
@@ -35,8 +96,6 @@ namespace RubixCubeSolver.Objects
             objectPos = objectPosIn ?? new Vector3(0.0f);               /// (0, 0, 0) is the centre of the world
 
             setAngles(horizontalAngleIn, verticalAngleIn);
-
-            myModel = Matrix4.Identity * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(verticalAngleIn)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(horizontalAngleIn));
 
             count++;
         }
@@ -84,13 +143,13 @@ namespace RubixCubeSolver.Objects
             angles[1] = verticalAngleIn;
         }
 
-        public Matrix4 getMyModel()
+        public int getInvertRotation()
         {
-            return myModel;
+            return invertRotation;
         }
-        public void setMyModel(Matrix4 value)
+        public void setInvertRotation(int value)
         {
-            myModel = value;
+            invertRotation = value;
         }
 
         public void DisposeThisCompositeGameObject()
@@ -181,11 +240,13 @@ namespace RubixCubeSolver.Objects
 
                 Matrix3 transform = Matrix3.CreateRotationX(MathHelper.DegreesToRadians(this.getAngles()[1])) * Matrix3.CreateRotationY(MathHelper.DegreesToRadians(this.getAngles()[0]));
 
-                aGameObject.setPosition(objectPos + transform * aGameObject.getPosition());
+                //aGameObject.setPosition(objectPos + transform * aGameObject.getPosition());
+                aGameObject.setPosition(objectPos + objectScale * (transform * aGameObject.getPosition()));
 
                 aGameObject.setScale(aGameObject.getScale() * objectScale);
                 aGameObject.setAngles(aGameObject.getAngles()[0] + this.getAngles()[0], aGameObject.getAngles()[1] + this.getAngles()[1]);
-                aGameObject.setMyModel(aGameObject.getMyModel() * myModel);
+                aGameObject.setInvertRotation(aGameObject.getInvertRotation() * invertRotation);
+
 
             }
 

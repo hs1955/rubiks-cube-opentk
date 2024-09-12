@@ -33,16 +33,17 @@ namespace RubixCubeSolver.Objects
         Vector3 objectCol;
         float objectScale;
         float[] angles = new float[2];
-        Matrix4 myModel = new Matrix4();
 
         /// Only Information for Other Functions to work properly
         /// Total Number of these objects
         private static int count;
         private string myType;
+        private int invertRotation = 1;
         private bool switchYForZ;
+        private bool switchXForZ;
 
         /// The GameObject Constructor. Here is where all the information is initialized and set (including default values), upon creation of the object
-        public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shaderIn, float objectScaleIn = 1.0f, float horizontalAngleIn = 0.0f, float verticalAngleIn = 0.0f, Vector3? objectPosIn = null, Vector3? objectColIn = null, bool switchYForZIn = false)
+        public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shaderIn, float objectScaleIn = 1.0f, float horizontalAngleIn = 0.0f, float verticalAngleIn = 0.0f, Vector3? objectPosIn = null, Vector3? objectColIn = null, bool switchYForZIn = false, bool switchXForZIn = false)
         {
             objectVertices = objectVerticesIn;
             objectIndices = objectIndicesIn;
@@ -57,10 +58,9 @@ namespace RubixCubeSolver.Objects
             objectCol = objectColIn ?? new Vector3(1.0f, 0.3f, 0.31f);  /// R G B  This is a pink color
 
             switchYForZ = switchYForZIn;
+            switchXForZ = switchXForZIn;
 
             setAngles(horizontalAngleIn, verticalAngleIn);
-
-            myModel = Matrix4.Identity * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(verticalAngleIn)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(horizontalAngleIn));
 
             count++;
         }
@@ -184,10 +184,6 @@ namespace RubixCubeSolver.Objects
         {
             return VAO;
         }
-        public void setVAOHandle(int value)
-        {
-            VAO = value;
-        }
 
         public Vector3 getPosition()
         {
@@ -241,6 +237,15 @@ namespace RubixCubeSolver.Objects
             
         }
 
+        public int getInvertRotation()
+        {
+            return invertRotation;
+        }
+        public void setInvertRotation(int value)
+        {
+            invertRotation = value;
+        }
+
         public string getMyType()
         {
             return myType;
@@ -250,15 +255,6 @@ namespace RubixCubeSolver.Objects
             myType = value;
         }
 
-        public Matrix4 getMyModel()
-        {
-            return myModel;
-        }
-        public void setMyModel(Matrix4 value)
-        {
-            myModel = value;
-        }
-
         public bool getSwitchYForZ()
         {
             return switchYForZ;
@@ -266,6 +262,15 @@ namespace RubixCubeSolver.Objects
         public void setSwitchYForZ(bool value)
         {
             switchYForZ = value;
+        }
+
+        public bool getSwitchXForZ()
+        {
+            return switchXForZ;
+        }
+        public void setSwitchXForZ(bool value)
+        {
+            switchXForZ = value;
         }
 
         public void DisposeThisGameObject(bool isThisObjectPartOfComposite = false)
@@ -288,7 +293,7 @@ namespace RubixCubeSolver.Objects
             setCount(getCount() - 1);
 
             /// If this object is part of a composite object, don't bother deleting the gameobject from the master list of gameobjects (since this won't exist in the master list).
-            /// This will be handled by the CompositeGameObject's Version of DisposeThisCompositeGameObject
+            /// This will be handled by the CompositeGameObject's version of DisposeThisCompositeGameObject
             if (!isThisObjectPartOfComposite)
             {
                 if (!GameMaster.getGameObjects().Contains(this))
@@ -334,15 +339,14 @@ namespace RubixCubeSolver.Objects
             clonedGameObject.setPosition(objectPos);
             clonedGameObject.setScale(objectScale);
             clonedGameObject.setColor(objectCol);
+
             clonedGameObject.setAngles(getAngles()[0], getAngles()[1]);
-            clonedGameObject.setMyModel(myModel);
             clonedGameObject.setSwitchYForZ(switchYForZ);
+            clonedGameObject.setInvertRotation(invertRotation);
 
             /// Save the type of this object in a separate variable
             /// Although this GameObject renders exactly like it's original, it cannot be casted into it's original's type, so the only way to distinguish what type it is, is by using a separate variable to store the string
             clonedGameObject.setMyType(GetType().ToString());
-
-            //clone = true;
 
             return clonedGameObject;
         }

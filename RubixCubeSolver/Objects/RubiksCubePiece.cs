@@ -18,54 +18,29 @@ namespace RubixCubeSolver.Objects
             Yellow
         }
 
-        /// No Tile (Shader shader, float scale = 1.0f, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Vector3? position = null, Vector3? color = null) : base(vertices, indices, shader, scale, horizontalAngle, verticalAngle, position, color)
-        public RubiksCubePiece(Shader shader, float scale = 1.0f, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Vector3? position = null) : base(scale, horizontalAngle, verticalAngle, position)
+        public RubiksCubePiece(Shader shader, int frontColor = 0, int rightColor = 0, int topColor = 0, float scale = 1.0f, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Vector3? position = null) : base(scale, horizontalAngle, verticalAngle, position)
         {
-            setGameObjects(new List<GameMaster.IGameObject>
+            List<GameMaster.IGameObject> theObjects = new List<GameMaster.IGameObject>();
+
+            if (frontColor != 0)
             {
-                new Cube(shader, color: blackColor),
-                new Cube(shader, color: blackColor)
+                theObjects.Add(new Plane(shader, tileSize, 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.51f), ConvertRubiksCubeEnumToColor(frontColor)));
+            }
 
-            });
-
-        }
-
-        /// One Tile
-        public RubiksCubePiece(Shader shader, int color1, float scale = 1.0f, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Vector3? position = null) : base(scale, horizontalAngle, verticalAngle, position)
-        {
-            setGameObjects(new List<GameMaster.IGameObject> 
+            if (rightColor != 0)
             {
-                new Plane(shader, tileSize, 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.51f), ConvertRubiksCubeEnumToColor(color1)),
-                new Cube(shader, color: blackColor),
-                new Cube(shader, color: blackColor)
-            });
+                theObjects.Add(new Plane(shader, tileSize, 90.0f, 0.0f, new Vector3(0.51f, 0.0f, 0.0f), ConvertRubiksCubeEnumToColor(rightColor), false, true));
+            }
 
-        }
-
-        /// Two Tiles
-        public RubiksCubePiece(Shader shader, int color1, int color2, float scale = 1.0f, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Vector3? position = null) : base(scale, horizontalAngle, verticalAngle, position)
-        {
-            setGameObjects(new List<GameMaster.IGameObject>
+            if (topColor != 0)
             {
-                new Plane(shader, tileSize, 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.51f), ConvertRubiksCubeEnumToColor(color1)),
-                new Plane(shader, tileSize, 90.0f, 0.0f, new Vector3(0.51f, 0.0f, 0.0f), ConvertRubiksCubeEnumToColor(color2)),
-                new Cube(shader, color: blackColor),
-                new Cube(shader, color: blackColor)
-            });
+                theObjects.Add(new Plane(shader, tileSize, 0.0f, -90.0f, new Vector3(0.0f, 0.51f, 0.0f), ConvertRubiksCubeEnumToColor(topColor), true));
+            }
 
-        }
+            theObjects.Add(new Cube(shader, color: blackColor));
+            theObjects.Add(new Cube(shader, 0f, color: blackColor));
 
-        /// Three Tiles
-        public RubiksCubePiece(Shader shader, int color1, int color2, int color3, float scale = 1.0f, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Vector3? position = null) : base(scale, horizontalAngle, verticalAngle, position)
-        {
-            setGameObjects(new List<GameMaster.IGameObject>
-            {
-                new Plane(shader, tileSize, 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.51f), ConvertRubiksCubeEnumToColor(color1)),
-                new Plane(shader, tileSize, 90.0f, 0.0f, new Vector3(0.51f, 0.0f, 0.0f), ConvertRubiksCubeEnumToColor(color2)),
-                new Plane(shader, tileSize, 0.0f, -90.0f, new Vector3(0.0f, 0.51f, 0.0f), ConvertRubiksCubeEnumToColor(color3), true),
-                new Cube(shader, color: blackColor),
-                new Cube(shader, color: blackColor)
-            });
+            setGameObjects(theObjects);
 
         }
 

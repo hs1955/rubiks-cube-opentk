@@ -45,6 +45,8 @@ namespace RubixCubeSolver.Objects
 
         #endregion
 
+        CompositeGameObject theGameObject;
+
         /// <summary>
         /// Runs one time, when the window first opens. Any initialization-related code should go here.
         /// </summary>
@@ -80,12 +82,14 @@ namespace RubixCubeSolver.Objects
             //AddGameObjects(new Cube(lightingShader));
 
             //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 1.0f, 90f, 0f, position: new Vector3(0.0f)));
-            AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(0.0f)));
+            //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(0.0f)));
             //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(2.0f, 0.0f, 0.0f)));
             
             //AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(2.0f)));
+            //AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(-2.0f)));
 
-            AddGameObjects(new RubiksCube(lightingShader, position: new Vector3(0.0f)));
+            AddGameObjects(new RubiksCube(lightingShader, scale: 0.5f, position: new Vector3(0.0f)));
+            theGameObject = (CompositeGameObject)myGameObjects[0];
 
             base.OnLoad(e);
         }
@@ -186,20 +190,20 @@ namespace RubixCubeSolver.Objects
 
             if (input.IsKeyDown(Key.Up))
             {
-                ((CompositeGameObject)myGameObjects[1]).setAngles(((CompositeGameObject)myGameObjects[1]).getAngles()[0], ((CompositeGameObject)myGameObjects[1]).getAngles()[1] + 1f);
+                theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] + 1f);
             }
             else if (input.IsKeyDown(Key.Down))
             {
-                ((CompositeGameObject)myGameObjects[1]).setAngles(((CompositeGameObject)myGameObjects[1]).getAngles()[0], ((CompositeGameObject)myGameObjects[1]).getAngles()[1] - 1f);
+                theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] - 1f);
             }
 
             if (input.IsKeyDown(Key.Right))
             {
-                ((CompositeGameObject)myGameObjects[1]).setAngles(((CompositeGameObject)myGameObjects[1]).getAngles()[0] - 1f, ((CompositeGameObject)myGameObjects[1]).getAngles()[1]);
+                theGameObject.setAngles(theGameObject.getAngles()[0] - 1f, theGameObject.getAngles()[1]);
             }
             else if (input.IsKeyDown(Key.Left))
             {
-                ((CompositeGameObject)myGameObjects[1]).setAngles(((CompositeGameObject)myGameObjects[1]).getAngles()[0] + 1f, ((CompositeGameObject)myGameObjects[1]).getAngles()[1]);
+                theGameObject.setAngles(theGameObject.getAngles()[0] + 1f, theGameObject.getAngles()[1]);
             }
 
             /// OUTPUT DEBUG INFORMATION

@@ -1,6 +1,6 @@
 ﻿using RubixCubeSolver.Objects;
 
-/// VERSION 5
+/// VERSION 6
 namespace RubixCubeSolver
 {
     class Program
