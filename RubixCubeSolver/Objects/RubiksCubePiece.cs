@@ -38,7 +38,6 @@ namespace RubixCubeSolver.Objects
             }
 
             theObjects.Add(new Cube(shader, color: blackColor));
-            theObjects.Add(new Cube(shader, 0f, color: blackColor));
 
             setGameObjects(theObjects);
 

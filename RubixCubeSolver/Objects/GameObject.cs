@@ -1,6 +1,8 @@
 ﻿using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RubixCubeSolver.Objects
 {
@@ -15,6 +17,9 @@ namespace RubixCubeSolver.Objects
         /// This is the closest variation to this, without entering code into the subclass.
         ///static Dictionary<Type, int> VBOs;
 
+        /// This list stores clones, so that they can be deleted properly
+        private static List<GameObject> clones = new List<GameObject>();
+
         /// Necessary Parameters - They have no defaults, and a gameobject cannot be made without them
         float[] objectVertices;
         uint[] objectIndices;
@@ -28,6 +33,9 @@ namespace RubixCubeSolver.Objects
         int VBO = -1;
         int EBO = -1;
 
+        static Dictionary<string, int> VBOs = new Dictionary<string, int>();
+        static Dictionary<string, int> EBOs = new Dictionary<string, int>();
+
         /// These Attributes Have Defaults
         Vector3 objectPos;
         Vector3 objectCol;
@@ -35,8 +43,16 @@ namespace RubixCubeSolver.Objects
         float[] angles = new float[2];
 
         /// Only Information for Other Functions to work properly
-        /// Total Number of these objects
-        private static int count;
+
+        static Dictionary<string, int> count = new Dictionary<string, int>();
+        static Dictionary<string, float> longestX = new Dictionary<string, float>();
+        static Dictionary<string, float> longestY = new Dictionary<string, float>();
+        static Dictionary<string, float> longestZ = new Dictionary<string, float>();
+
+        float lengthX = -1.0f;
+        float lengthY = -1.0f;
+        float lengthZ = -1.0f;
+
         private string myType;
         private int invertRotation = 1;
         private bool switchYForZ;
@@ -47,8 +63,6 @@ namespace RubixCubeSolver.Objects
         {
             objectVertices = objectVerticesIn;
             objectIndices = objectIndicesIn;
-
-            VAO = SetupVAO(genAndGetVBOHandle(), genAndGetEBOHandle(), shaderIn);
 
             shader = shaderIn;
 
@@ -62,7 +76,21 @@ namespace RubixCubeSolver.Objects
 
             setAngles(horizontalAngleIn, verticalAngleIn);
 
-            count++;
+            /// If this object has not been created yet, generate VBO and EBO for GameObject, and store in dictionary, for use.
+            if (!count.ContainsKey(this.GetType().ToString()))
+            {
+                genAndGetVBOHandle();
+                genAndGetEBOHandle();
+                count.Add(this.GetType().ToString(), 1);
+            }
+
+            /// Setup Object, with thier VAO
+            VAO = SetupVAO(genAndGetVBOHandle(), genAndGetEBOHandle(), shader);
+
+            string key = this.GetType().ToString();
+
+            setCount(key, getCount(key) + 1);
+
         }
 
         /// A special GameObject which holds no information, this one is required specifically for cloning of a GameObject, and thus empty GameObjects can only exist within this class.
@@ -101,6 +129,62 @@ namespace RubixCubeSolver.Objects
         /// They are regenerated once none of the GameObjects exists, and a new one is created
         public int genAndGetVBOHandle()
         {
+            /// If the VBO is not -1, then return the value straight away
+            /// This is highly likely to be the case for cloned objects (which always have type GameObject) 
+            /// (Clones never have their original object's type)
+            if (VBO != -1)
+            {
+                return VBO;
+            }
+
+            string key = this.GetType().ToString();
+
+            /// If VBO doesn't exist, create one
+            if (!VBOs.ContainsKey(key))
+            {
+                /// Initialize a VBO for this object
+                /// Create Buffer for Object
+                VBO = GL.GenBuffer();
+
+                /// Obtain Handle to Our Buffer
+                GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
+
+                /// Finally, upload the vertices to the buffer.
+                /// Arguments:
+                /// 1) Which buffer the data should be sent to.
+                /// 2) How much data is being sent, in bytes. 
+                /// You can generally set this to the length of your array, multiplied by sizeof(array type).
+                /// 3) The vertices themselves.
+                /// 4) How the buffer will be used, so that OpenGL can write the data to the proper memory space on the GPU.
+                /// 
+                /// There are three different BufferUsageHints for drawing:
+                /// StaticDraw: This buffer will rarely, if ever, update after being initially uploaded.
+                /// 
+                /// DynamicDraw: This buffer will change frequently after being initially uploaded.
+                /// 
+                /// StreamDraw: This buffer will change on every frame.
+                /// 
+                /// Writing to the proper memory space is important! Generally, you'll only want StaticDraw,
+                /// But be sure to use the right one for your use case. 
+                GL.BufferData(BufferTarget.ArrayBuffer, this.getVertices().Length * sizeof(float), this.getVertices(), BufferUsageHint.StaticDraw);
+
+                GL.Finish();
+
+                VBOs.Add(key, VBO);
+
+                return VBO;
+
+            }
+
+            /// else: The object is not a clone, and a VBO does exist for it, so fetch it from the dictionary
+            VBO = VBOs[key];
+
+            return VBO;
+        }
+
+        /*
+        public int genAndGetVBOHandle()
+        {
             /// If VBO doesn't exist
             if (VBO == -1)
             {
@@ -134,22 +218,69 @@ namespace RubixCubeSolver.Objects
 
             return VBO;
         }
+        //*/
+        
+        /// Useful with clones
         void setVBOHandle(int value)
         {
             VBO = value;
         }
+
         public void delVBOHandle()
         {
+            string key = this.GetType().ToString();
+
             /// Delete Buffer with handle ID
             GL.DeleteBuffer(genAndGetVBOHandle());
 
+            GL.Finish();
+
             /// Remove the VBO from the Dictionary entries
-            //VBOs.Remove(GetType());
+            VBOs.Remove(key);
 
             /// Set the VBO value to -1 to show it doesn't exist
             VBO = -1;
         }
 
+        public int genAndGetEBOHandle()
+        {
+            /// If the EBO is not -1, then return the value straight away
+            /// This is highly likely to be the case for cloned objects, with type GameObject, and not their original object's type
+            if (EBO != -1)
+            {
+                return EBO;
+            }
+
+            string key = this.GetType().ToString();
+
+            /// If EBO doesn't exist, create one
+            if (!EBOs.ContainsKey(key))
+            {
+                /// Initialize a EBO for this object
+                EBO = GL.GenBuffer();
+
+                /// Obtain Handle to Our Buffer
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, EBO);
+
+                /// Finally, upload the vertices to the buffer.
+                GL.BufferData(BufferTarget.ElementArrayBuffer, this.getIndices().Length * sizeof(uint), this.getIndices(), BufferUsageHint.StaticDraw);
+
+                GL.Finish();
+
+                EBOs.Add(key, EBO);
+
+                return EBO;
+
+            }
+
+            /// else: The object is not a clone, and a VBO does exist for it, so fetch it from the dictionary
+            EBO = EBOs[key];
+
+            return EBO;
+
+        }
+
+        /*
         public int genAndGetEBOHandle()
         {
             /// If EBO doesn't exist
@@ -168,21 +299,114 @@ namespace RubixCubeSolver.Objects
 
             return EBO;
         }
+        //*/
+
         void setEBOHandle(int value)
         {
             EBO = value;
         }
         public void delEBOHandle()
         {
+            string key = this.GetType().ToString();
+
             /// Delete Buffer with handle ID
             GL.DeleteBuffer(genAndGetEBOHandle());
+
+            GL.Finish();
+
+            EBOs.Remove(key);
 
             EBO = -1;
         }
 
         public int getVAOHandle()
         {
+            /// Bind VBO and EBO to the VAO...
+            /// ... so that when the individual VAO is loaded, the correct VBO and EBO is loaded too.
+            //GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
+            //GL.BindBuffer(BufferTarget.ElementArrayBuffer, EBO);
+
             return VAO;
+        }
+
+        public void genAndOutLongestXYZ(out float XDistance, out float YDistance, out float ZDistance)
+        {
+            /// If the length values already exist (in this case, for a clone)
+            if (lengthX != -1)
+            {
+                XDistance = lengthX;
+                YDistance = lengthY;
+                ZDistance = lengthZ;
+                return;
+            }
+
+            string key = this.GetType().ToString();
+
+            /// If LongestXYZ doesn't exist, create one. (I could have checked longestY or Z too, this would have not made a difference, as all change together)
+            if (!longestX.ContainsKey(key))
+            {
+                float[] XCoordinates = new float[objectVertices.Length / 3];
+                float[] YCoordinates = new float[objectVertices.Length / 3];
+                float[] ZCoordinates = new float[objectVertices.Length / 3];
+
+                for (int i = 0; i < objectVertices.Length; i++)
+                {
+                    /// Integer divide for the index we will be accessing
+                    int index = i / 3;
+
+                    float vertex = objectVertices[i];
+
+                    switch (i % 3)
+                    {
+                        case 0:
+                            XCoordinates[index] = vertex;
+                            break;
+
+                        case 1:
+                            YCoordinates[index] = vertex;
+                            break;
+
+                        case 2:
+                            ZCoordinates[index] = vertex;
+                            break;
+                    }
+                }
+
+                const float minLength = 0.1f;
+
+                XDistance = XCoordinates.Max() - XCoordinates.Min();
+                if (0 <= XDistance && XDistance < minLength) XDistance = minLength;
+                else if (0 >= XDistance && XDistance > -minLength) XDistance = -minLength;
+                longestX.Add(key, XDistance);
+
+                YDistance = YCoordinates.Max() - YCoordinates.Min();
+                if (0 < YDistance && YDistance < minLength) YDistance = minLength;
+                else if (0 > YDistance && YDistance > -minLength) YDistance = -minLength;
+                longestY.Add(key, YDistance);
+
+                ZDistance = ZCoordinates.Max() - ZCoordinates.Min();
+                if (0 <= ZDistance && ZDistance < minLength) ZDistance = minLength;
+                else if (0 >= ZDistance && ZDistance > -minLength) ZDistance = -minLength;
+                longestZ.Add(key, ZDistance);
+
+                return;
+
+            }
+
+            /// else: The object has its values already generated and is not a clone, so fetch the values from the dictionary
+            XDistance = longestX[key];
+            YDistance = longestY[key];
+            ZDistance = longestZ[key];
+
+        }
+
+        void setLongestXYZ(float valueX, float valueY, float valueZ)
+        {
+            string key = this.GetType().ToString();
+
+            lengthX = valueX;
+            lengthY = valueY;
+            lengthZ = valueZ;
         }
 
         public Vector3 getPosition()
@@ -212,13 +436,14 @@ namespace RubixCubeSolver.Objects
             objectScale = value;
         }
 
-        public int getCount()
+        public int getCount(string key)
         {
-            return count;
+            return count[key];
         }
-        public void setCount(int value)
+        public void setCount(string key, int value)
         {
-            count = value;
+            count.Remove(key);
+            count.Add(key, value);
         }
 
         public float[] getAngles()
@@ -275,22 +500,32 @@ namespace RubixCubeSolver.Objects
 
         public void DisposeThisGameObject(bool isThisObjectPartOfComposite = false)
         {
-            /// If there aren't any more objects of this type, delete the GameObject Type's buffers
-            if (true) //(getCount() == 0)
+            string key = this.GetType().ToString();
+
+            if (key.EndsWith("GameObject"))
+            {
+                key = myType;
+            }
+
+            /// Decrement the count of this type of GameObjects, currently present
+            setCount(key, getCount(key) - 1);
+
+            /// If there aren't any more objects of this type, delete the GameObject Type's buffers, and remove according information/handles
+            if (getCount(key) == 0)
             {
                 /// Delete VBO Handle in the GameObject Type
                 delVBOHandle();
 
                 /// Delete EBO Handle in the GameObject Type
                 delEBOHandle();
+
+                count.Remove(key);
             }
 
             /// Each GameObject has a unique VAO, so this will always be deleted whenever this function is called
-            //GL.DeleteVertexArray(myGameObjectsVAOHandles[gameObjectIndex]);
             GL.DeleteVertexArray(getVAOHandle());
 
-            /// Decrement the count of this type of GameObjects, currently present
-            setCount(getCount() - 1);
+            GL.Finish();
 
             /// If this object is part of a composite object, don't bother deleting the gameobject from the master list of gameobjects (since this won't exist in the master list).
             /// This will be handled by the CompositeGameObject's version of DisposeThisCompositeGameObject
@@ -321,7 +556,7 @@ namespace RubixCubeSolver.Objects
 
             /// if false, then a very special semiclone is created.
             /// This semiclone will have the same properties as the original, but has the same VAO as the current object, allowing for changes to be made to this object, which will not effect the original object.
-            
+
             /// A very special type of GameObject which is empty. Used for placing in new information manually (like in cloning)
             GameObject clonedGameObject = new GameObject();
 
@@ -331,24 +566,47 @@ namespace RubixCubeSolver.Objects
             clonedGameObject.setShader(shader);
 
             /// Set the Handles: VBO, EBO and VAO with the same values as the current object, since this object doesn't exist in the main list of GameObjects
-            clonedGameObject.setVBOHandle(VBO);
-            clonedGameObject.setEBOHandle(EBO);
-            clonedGameObject.VAO = VAO;
-
+            if (VBO != -1 && EBO != -1)
+            {
+                clonedGameObject.setVBOHandle(VBO);
+                clonedGameObject.setEBOHandle(EBO);
+            }
+            if (VAO != -1)
+            {
+                clonedGameObject.VAO = VAO;
+            
+            }
             /// Set the position, scale and color to the same as this object
             clonedGameObject.setPosition(objectPos);
             clonedGameObject.setScale(objectScale);
             clonedGameObject.setColor(objectCol);
 
+            /// Angle the object correctly
             clonedGameObject.setAngles(getAngles()[0], getAngles()[1]);
             clonedGameObject.setSwitchYForZ(switchYForZ);
             clonedGameObject.setInvertRotation(invertRotation);
+
+            #region RACASTING APPROACH (Detection Box)
+            //genAndOutLongestXYZ(out lengthX, out lengthY, out lengthZ);
+            /// This is responsible for speeding up rendering, by omitting shapes behind others
+            //clonedGameObject.setLongestXYZ(lengthX, lengthY, lengthZ);
+            #endregion
 
             /// Save the type of this object in a separate variable
             /// Although this GameObject renders exactly like it's original, it cannot be casted into it's original's type, so the only way to distinguish what type it is, is by using a separate variable to store the string
             clonedGameObject.setMyType(GetType().ToString());
 
-            return clonedGameObject;
+            clones.Add(clonedGameObject);
+
+            return clones[clones.Count - 1];
+        }
+
+        /// <summary>
+        /// Dispose of all the cloned objects
+        /// </summary>
+        public static void DisposeAllClones()
+        {
+            clones.Clear();
         }
 
         ///<summary>
@@ -357,7 +615,7 @@ namespace RubixCubeSolver.Objects
         /// When Binding VAOs, the relavant VBO, EBO and Shader informaation is all gathered is obtained.
         /// Shader defaults to the lighting shader
         ///</summary>
-        private int SetupVAO(int VBO, int EBO, Shader objectShader)
+        public static int SetupVAO(int VBO, int EBO, Shader objectShader)
         {
             /// Both checks below make sure an error occurs if the object VBO and EBO aren't generated/obtained properly
             /// -1 is the value the VBO and EBO Handles hold when they don't exist
@@ -417,6 +675,8 @@ namespace RubixCubeSolver.Objects
             /// ... so that when the individual VAO is loaded, the correct VBO and EBO is loaded too.
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, EBO);
+
+            GL.Finish();
 
             return HandleVAO;
         }

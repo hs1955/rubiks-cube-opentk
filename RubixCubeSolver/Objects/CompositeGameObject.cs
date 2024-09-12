@@ -26,12 +26,14 @@ namespace RubixCubeSolver.Objects
         /// </summary>
         private void CheckForInverted()
         {
-            //*
             foreach (GameMaster.IGameObject aGameObject in gameObjects)
             {
                 if (aGameObject is GameObject)
                 {
-                    if (!(Math.Abs(((GameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) == 180f))
+                    //if (!((Math.Abs(((GameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) > 90f) && (Math.Abs(((GameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) < 270f)))
+
+                    /// If the object is upsidedown, set flag for being upsidedown to positive (at 180 degrees, it does not really matter if it's set or not, but after 180 degrees, it does matter)
+                    if (!(Math.Abs(((GameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) >= 180f))
                     {
                         ((GameObject)aGameObject).setInvertRotation(((GameObject)aGameObject).getInvertRotation() * -1);
                     }
@@ -43,40 +45,13 @@ namespace RubixCubeSolver.Objects
                     /// Do the same for it's subordinates
                     ((CompositeGameObject)aGameObject).CheckForInverted();
 
-                    if (!(Math.Abs(((CompositeGameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) == 180f))
-                    {
-                        ((CompositeGameObject)aGameObject).setInvertRotation(((CompositeGameObject)aGameObject).getInvertRotation() * -1);
-                    }
-                }
-
-            }
-            //*/
-
-            /*
-            foreach (GameMaster.IGameObject aGameObject in gameObjects)
-            {
-                if (aGameObject is GameObject)
-                {
-                    if (!(Math.Abs(((GameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) > 90f))
-                    {
-                        ((GameObject)aGameObject).setInvertRotation(((GameObject)aGameObject).getInvertRotation() * -1);
-                    }
-
-                }
-
-                else if (aGameObject is CompositeGameObject)
-                {
-                    /// Do the same for it's subordinates
-                    ((CompositeGameObject)aGameObject).CheckForInverted();
-
-                    if (!(Math.Abs(((CompositeGameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) > 90f))
+                    if (!(Math.Abs(((CompositeGameObject)aGameObject).getAngles()[1] + this.getAngles()[1]) >= 180f))
                     {
                         ((CompositeGameObject)aGameObject).setInvertRotation(((CompositeGameObject)aGameObject).getInvertRotation() * -1);
                     }
                 }
                 
             }
-            //*/
         }
 
         /// These Attributes Have Defaults

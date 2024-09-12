@@ -47,6 +47,16 @@ namespace RubixCubeSolver.Objects
 
                     });
                     break;
+                         
+                case 4:
+                    setGameObjects(new List<GameMaster.IGameObject>
+                    {
+
+                        new RubiksCube(shader, 1.0f, position: new Vector3(-2.0f, 0.0f, 0.0f)),
+                        new RubiksCube(shader, 1.0f, position: new Vector3(2.0f, 0.0f, 0.0f))
+
+                    }); ;
+                    break;
             }
 
         }

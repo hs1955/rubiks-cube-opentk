@@ -46,6 +46,8 @@ namespace RubixCubeSolver.Objects
         #endregion
 
         CompositeGameObject theGameObject;
+        const bool debug = true;
+
 
         /// <summary>
         /// Runs one time, when the window first opens. Any initialization-related code should go here.
@@ -84,11 +86,12 @@ namespace RubixCubeSolver.Objects
             //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 1.0f, 90f, 0f, position: new Vector3(0.0f)));
             //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(0.0f)));
             //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(2.0f, 0.0f, 0.0f)));
-            
-            //AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(2.0f)));
-            //AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(-2.0f)));
 
-            AddGameObjects(new RubiksCube(lightingShader, scale: 0.5f, position: new Vector3(0.0f)));
+            //AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(0.0f)));
+            //AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(2.0f, 0.0f, 0.0f)));
+
+            //AddGameObjects(new RubiksCube(lightingShader, scale: 0.5f, position: new Vector3(0.0f)));
+            AddGameObjects(new CompositeTest(lightingShader, 4, scale: 0.5f, position: new Vector3(0.0f)));
             theGameObject = (CompositeGameObject)myGameObjects[0];
 
             base.OnLoad(e);
@@ -101,7 +104,8 @@ namespace RubixCubeSolver.Objects
 
             _frameTime += 1;
 
-            DrawAllGameObjects(omitVAOs);
+            UpdateGameObjectsOnlyList();
+            DrawAllGameObjects(false, omitVAOs);
 
             /// One area is displayed, while the other is being rendered to. Then, when you call SwapBuffers, the two are reversed. A single-buffered context could have issues such as screen tearing.
             Context.SwapBuffers();
@@ -128,7 +132,10 @@ namespace RubixCubeSolver.Objects
             {
                 if (mouse.IsButtonDown(MouseButton.Left))
                 {
-                    CursorVisible = false;
+                    if (debug)
+                    {
+                        CursorVisible = false;
+                    }
                     pause = false;
                 }
 
@@ -142,111 +149,145 @@ namespace RubixCubeSolver.Objects
             const float sensitivity = 0.2f;
 
             #region Controls
-            if (input.IsKeyDown(Key.W))
+            if (debug)
             {
-                _camera.Position += _camera.Front * cameraSpeed * (float)e.Time; // Forward
-            }
-            if (input.IsKeyDown(Key.S))
-            {
-                _camera.Position -= _camera.Front * cameraSpeed * (float)e.Time; // Backwards
-            }
-            if (input.IsKeyDown(Key.A))
-            {
-                _camera.Position -= _camera.Right * cameraSpeed * (float)e.Time; // Left
-            }
-            if (input.IsKeyDown(Key.D))
-            {
-                _camera.Position += _camera.Right * cameraSpeed * (float)e.Time; // Right
-            }
-            if (input.IsKeyDown(Key.Space))
-            {
-                _camera.Position += _camera.Up * cameraSpeed * (float)e.Time; // Up
-            }
-            if (input.IsKeyDown(Key.LShift))
-            {
-                _camera.Position -= _camera.Up * cameraSpeed * (float)e.Time; // Down
-            }
-
-            if (input.IsKeyDown(Key.Number1) && (_frameTime > _prevTime + 10))
-            {
-                AddGameObjects(new Cube(lightingShader, scale: rnd.Next(5, 15) / 10f, horizontalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, verticalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
-
-                _prevTime = _frameTime;
-            }
-
-            if (input.IsKeyDown(Key.Number2) && (_frameTime > _prevTime + 10))
-            {
-                AddGameObjects(new Plane(lightingShader, scale: rnd.Next(5, 15) / 10f, horizontalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, verticalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
-
-                _prevTime = _frameTime;
-            }
-            
-            if (input.IsKeyDown(Key.Number0) && (_frameTime > _prevTime + 10))
-            {
-                DisposeAllGameObjects();
-
-                _prevTime = _frameTime;
-            }
-
-            if (input.IsKeyDown(Key.Up))
-            {
-                theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] + 1f);
-            }
-            else if (input.IsKeyDown(Key.Down))
-            {
-                theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] - 1f);
-            }
-
-            if (input.IsKeyDown(Key.Right))
-            {
-                theGameObject.setAngles(theGameObject.getAngles()[0] - 1f, theGameObject.getAngles()[1]);
-            }
-            else if (input.IsKeyDown(Key.Left))
-            {
-                theGameObject.setAngles(theGameObject.getAngles()[0] + 1f, theGameObject.getAngles()[1]);
-            }
-
-            /// OUTPUT DEBUG INFORMATION
-            if (input.IsKeyDown(Key.Z) && (_frameTime > _prevTime + 10))
-            {
-                Console.Clear();
-
-                for (int i = 0; i < getGameObjects().Count; i++)
+                if (input.IsKeyDown(Key.W))
                 {
-                    Console.WriteLine(getGameObjects()[i]);
+                    _camera.Position += _camera.Front * cameraSpeed * (float)e.Time; // Forward
+                }
+                if (input.IsKeyDown(Key.S))
+                {
+                    _camera.Position -= _camera.Front * cameraSpeed * (float)e.Time; // Backwards
+                }
+                if (input.IsKeyDown(Key.A))
+                {
+                    _camera.Position -= _camera.Right * cameraSpeed * (float)e.Time; // Left
+                }
+                if (input.IsKeyDown(Key.D))
+                {
+                    _camera.Position += _camera.Right * cameraSpeed * (float)e.Time; // Right
+                }
+                if (input.IsKeyDown(Key.Space))
+                {
+                    _camera.Position += _camera.Up * cameraSpeed * (float)e.Time; // Up
+                }
+                if (input.IsKeyDown(Key.LShift))
+                {
+                    _camera.Position -= _camera.Up * cameraSpeed * (float)e.Time; // Down
                 }
 
-                Console.WriteLine("\n");
-
-                for (int i = 0; i < preparedGameObjectsList.Count; i++)
+                if (input.IsKeyDown(Key.Number1) && (_frameTime > _prevTime + 10))
                 {
-                    Console.WriteLine(preparedGameObjectsList[i]);
+                    AddGameObjects(new Cube(lightingShader, scale: rnd.Next(5, 15) / 10f, horizontalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, verticalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
+
+                    _prevTime = _frameTime;
                 }
 
-                _prevTime = _frameTime;
+                if (input.IsKeyDown(Key.Number2) && (_frameTime > _prevTime + 10))
+                {
+                    AddGameObjects(new Plane(lightingShader, scale: rnd.Next(5, 15) / 10f, horizontalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, verticalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
+
+                    _prevTime = _frameTime;
+                }
+
+                if (input.IsKeyDown(Key.Number0) && (_frameTime > _prevTime + 10))
+                {
+                    DisposeAllGameObjects();
+
+                    _prevTime = _frameTime;
+                }
+
+                if (input.IsKeyDown(Key.Up))
+                {
+                    theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] + 1f);
+                }
+                else if (input.IsKeyDown(Key.Down))
+                {
+                    theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] - 1f);
+                }
+
+                if (input.IsKeyDown(Key.Right))
+                {
+                    theGameObject.setAngles(theGameObject.getAngles()[0] - 1f, theGameObject.getAngles()[1]);
+                }
+                else if (input.IsKeyDown(Key.Left))
+                {
+                    theGameObject.setAngles(theGameObject.getAngles()[0] + 1f, theGameObject.getAngles()[1]);
+                }
+
+                /// OUTPUT DEBUG INFORMATION
+                if (input.IsKeyDown(Key.Z) && (_frameTime > _prevTime + 10))
+                {
+                    Console.Clear();
+
+                    for (int i = 0; i < getGameObjects().Count; i++)
+                    {
+                        Console.WriteLine(getGameObjects()[i]);
+                    }
+
+                    Console.WriteLine("\n");
+
+                    for (int i = 0; i < gameObjectsOnlyList.Count; i++)
+                    {
+                        Console.WriteLine(gameObjectsOnlyList[i]);
+                    }
+
+                    _prevTime = _frameTime;
+                }
+
+                if (input.IsKeyDown(Key.Escape))
+                {
+                    CursorVisible = true;
+                    pause = true;
+                }
+
+                if (_firstMove) // this bool variable is initially set to true
+                {
+                    _lastPos = new Vector2(mouse.X, mouse.Y);
+                    _firstMove = false;
+                }
+                else
+                {
+                    // Calculate the offset of the mouse position
+                    var deltaX = mouse.X - _lastPos.X;
+                    var deltaY = mouse.Y - _lastPos.Y;
+                    _lastPos = new Vector2(mouse.X, mouse.Y);
+
+                    // Apply the camera pitch and yaw (we clamp the pitch in the camera class)
+                    _camera.Yaw += deltaX * sensitivity;
+                    _camera.Pitch -= deltaY * sensitivity; // reversed since y-coordinates range from bottom to top
+                }
             }
 
-            if (input.IsKeyDown(Key.Escape))
-            {
-                CursorVisible = true;
-                pause = true;
-            }
-
-            if (_firstMove) // this bool variable is initially set to true
-            {
-                _lastPos = new Vector2(mouse.X, mouse.Y);
-                _firstMove = false;
-            }
             else
             {
-                // Calculate the offset of the mouse position
-                var deltaX = mouse.X - _lastPos.X;
-                var deltaY = mouse.Y - _lastPos.Y;
-                _lastPos = new Vector2(mouse.X, mouse.Y);
+                if (mouse.IsButtonDown(MouseButton.Left))
+                {
+                    if (_firstMove) // this bool variable is initially set to true
+                    {
+                        _lastPos = new Vector2(mouse.X, mouse.Y);
+                        _firstMove = false;
+                    }
+                    else
+                    {
+                        // Calculate the offset of the mouse position
+                        var deltaX = mouse.X - _lastPos.X;
+                        var deltaY = mouse.Y - _lastPos.Y;
+                        _lastPos = new Vector2(mouse.X, mouse.Y);
 
-                // Apply the camera pitch and yaw (we clamp the pitch in the camera class)
-                _camera.Yaw += deltaX * sensitivity;
-                _camera.Pitch -= deltaY * sensitivity; // reversed since y-coordinates range from bottom to top
+                        /// Apply rotation
+                        float scrollX = theGameObject.getAngles()[0] - deltaX * sensitivity * 1.2f;
+                        float scrollY = MathHelper.Clamp(theGameObject.getAngles()[1] - deltaY * sensitivity * 1.2f, -90.0f, 90.0f);
+
+                        theGameObject.setAngles(scrollX, scrollY);
+                    }
+                }
+
+                else
+                {
+                    _firstMove = true;
+                }
+                
             }
 
             #endregion
@@ -368,15 +409,24 @@ namespace RubixCubeSolver.Objects
         /// further out
         protected override void OnMouseMove(MouseMoveEventArgs e)
         {
-            if (Focused && !pause) // check to see if the window is focused
+            if (debug)
             {
-                Mouse.SetPosition(X + Width / 2f, Y + Height / 2f);
+                if (Focused && !pause) // check to see if the window is focused
+                {
+                    Mouse.SetPosition(X + Width / 2f, Y + Height / 2f);
+                }
+
+                else
+                {
+                    _firstMove = true;
+                }
             }
 
             else
             {
-                _firstMove = true;
+                return;
             }
+            
 
             base.OnMouseMove(e);
         }
@@ -385,7 +435,7 @@ namespace RubixCubeSolver.Objects
         /// this is simply done by changing the FOV of the camera
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
-            if (!Focused || pause)
+            if (!Focused || pause || !debug)
             {
                 return;
             }
