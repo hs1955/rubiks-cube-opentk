@@ -5,7 +5,7 @@ namespace RubixCubeSolver.Objects
 {
     class CompositeTest : CompositeGameObject
     {
-        public CompositeTest(Shader shader, int version, float scale = 1.0f, Vector3? position = null, float[] angles = null, float[] invertRot = null) : base(scale, position, angles)
+        public CompositeTest(Shader shader, int version, float scale = 1.0f, Vector3? position = null, float[] angles = null, float[] invertRot = null) : base(scale, position, angles, invertRot)
         {
             switch (version)
             {
@@ -25,9 +25,9 @@ namespace RubixCubeSolver.Objects
                     {
 
                         new Plane(shader, color: new Vector3(0.96f)),
-                        new Plane(shader, scale: 1.3f, position: new Vector3(-1.0f, 1.0f, 1.0f), color: new Vector3(0.9f, 0.0f, 0.0f)),
-                        new Plane(shader, scale: 0.8f, position: new Vector3(0.0f, 1.0f, 0.0f), color: new Vector3(0.0f, 0.0f, 0.9f)),
-                        new Plane(shader, scale: 0.5f, position: new Vector3(1.0f, 1.0f, -1.0f), color: new Vector3(1.0f, 0.3f, 0.0f)),
+                        new Plane(shader, scale: 1.3f, position: new Vector3(-1.0f, 0.0f, 1.0f), color: new Vector3(0.9f, 0.0f, 0.0f)),
+                        new Plane(shader, scale: 0.8f, position: new Vector3(0.0f, 0.0f, 0.0f), color: new Vector3(0.0f, 0.0f, 0.9f)),
+                        new Plane(shader, scale: 0.5f, position: new Vector3(1.0f, 0.0f, -1.0f), color: new Vector3(1.0f, 0.3f, 0.0f)),
                         new Plane(shader, scale: 1.1f, position: new Vector3(-1.0f, -1.0f, 1.0f), color: new Vector3(0.0f, 0.5f, 0.0f)),
                         new Plane(shader, scale: 0.6f, position: new Vector3(-1.0f, 0.0f, -1.0f), color: new Vector3(1.0f, 0.7f, 0.0f))
 
@@ -39,23 +39,13 @@ namespace RubixCubeSolver.Objects
                     {
 
                         new Plane(shader, color: new Vector3(0.96f)),
-                        new Plane(shader, scale: 1.3f, position: new Vector3(-1.0f, 1.0f, 0.0f), color: new Vector3(0.9f, 0.0f, 0.0f)),
-                        new Plane(shader, scale: 0.8f, position: new Vector3(0.0f, 1.0f, 0.0f), color: new Vector3(0.0f, 0.0f, 0.9f)),
-                        new Plane(shader, scale: 0.5f, position: new Vector3(1.0f, 1.0f, 0.0f), color: new Vector3(1.0f, 0.3f, 0.0f)),
+                        new Plane(shader, scale: 1.3f, position: new Vector3(-1.0f, 0.0f, 0.0f), color: new Vector3(0.9f, 0.0f, 0.0f)),
+                        new Plane(shader, scale: 0.8f, position: new Vector3(0.0f, 0.0f, 0.0f), color: new Vector3(0.0f, 0.0f, 0.9f)),
+                        new Plane(shader, scale: 0.5f, position: new Vector3(1.0f, 0.0f, 0.0f), color: new Vector3(1.0f, 0.3f, 0.0f)),
                         new Plane(shader, scale: 1.1f, position: new Vector3(-1.0f, -1.0f, 0.0f), color: new Vector3(0.0f, 0.5f, 0.0f)),
                         new Plane(shader, scale: 0.6f, position: new Vector3(-1.0f, 0.0f, 0.0f), color: new Vector3(1.0f, 0.7f, 0.0f))
 
                     });
-                    break;
-                         
-                case 4:
-                    setGameObjects(new List<GameMaster.IGameObject>
-                    {
-
-                        new RubiksCube(shader, 1.0f, position: new Vector3(-2.0f, 0.0f, 0.0f)),
-                        new RubiksCube(shader, 1.0f, position: new Vector3(2.0f, 0.0f, 0.0f))
-
-                    }); ;
                     break;
             }
 

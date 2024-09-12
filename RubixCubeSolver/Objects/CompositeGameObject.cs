@@ -19,117 +19,116 @@ namespace RubixCubeSolver.Objects
             gameObjects.Clear();
             gameObjects.AddRange(theGameObjects);
 
-            //StandardiseAxes();
+            //CheckForInverted();
         }
 
         /// <summary>
         /// This function is solely responsible for stopping a particular bug, where individual GameObjects, that are turned upsidedown, while being added, turn in the Horizontal Direction, the opposite way to the rest of the object.
         /// </summary>
-        private void StandardiseAxes()
+        private void CheckForInverted()
         {
             foreach (GameMaster.IGameObject aGameObject in gameObjects)
             {
-                float[] anglesInfo = null;
-                float[] invertRotInfo = null;
-                int[] swapAnglesInfo = null;
-
-                float[] newInvertRot = new float[3];
-                int[] newSwapAngles = new int[3];
+                float[] angleInfo;
 
                 if (aGameObject is GameObject)
                 {
-                    anglesInfo = ((GameObject)aGameObject).getAngles();
-                    invertRotInfo = ((GameObject)aGameObject).getInvertRotation();
-                    swapAnglesInfo = ((GameObject)aGameObject).getSwapAngles();
+                    //GameObject gameObject = (GameObject)aGameObject;
+
+                    //angleInfo = gameObject.getAngles();
+
                 }
-
-                else if (aGameObject is CompositeGameObject)
-                {
-                    /// Do the same for it's subordinates
-                    ((CompositeGameObject)aGameObject).StandardiseAxes();
-
-                    /// Then do it for the whole object
-                    anglesInfo = ((CompositeGameObject)aGameObject).getAngles();
-                    invertRotInfo = ((CompositeGameObject)aGameObject).getInvertRotation();
-                    swapAnglesInfo = ((CompositeGameObject)aGameObject).getSwapAngles();
-                }
-
-                newInvertRot = invertRotInfo;
-                newSwapAngles = swapAnglesInfo;
-
-                #region Checks
-                /*
-
-                switch ((anglesInfo[0] + this.getAngles()[0]) % 360)
-                {
-                    case 90f:
-                        newSwapAngles = ReturnSwappedList(newSwapAngles, 1, 2);
-                        newInvertRot = new float[] { invertRotInfo[0], invertRotInfo[1] * -1f, invertRotInfo[2] };
-                        break;
-
-                    case -90f:
-                        newSwapAngles = ReturnSwappedList(newSwapAngles, 0, 2);
-                        //newInvertRot = new float[] { invertRotInfo[0], invertRotInfo[1], invertRotInfo[2] * -1f };
-                        break;
-                }
-                //*/
                 
-                //*
-                switch ((anglesInfo[1] + this.getAngles()[1]) % 360)
+                //* 
+                else if (aGameObject is CompositeGameObject)
                 {
-                    case 90f:
-                        newSwapAngles = ReturnSwappedList(newSwapAngles, 0, 1);
-                        //newInvertRot = new float[] { invertRotInfo[0], invertRotInfo[1], invertRotInfo[2] * -1f };
-                        break;
-                }
+                    CompositeGameObject gameObject = (CompositeGameObject)aGameObject;
 
+                    angleInfo = gameObject.getAngles();
+
+                    /// This step has already been covered when the Composite's gameObjects were set, and does not need to be done again
+                    /// ((CompositeGameObject)aGameObject).CheckForInverted();
+
+                    if (angleInfo[0] == 90f)
+                    {
+
+                    }
+
+                    else if (angleInfo[1] == 90f)
+                    {
+                        //gameObject.setSwapAngles(0, 1, 2);
+
+                        float[] invertInfo = gameObject.getInvertRotation();
+                        //gameObject.setInvertRotation(invertInfo[0], invertInfo[1] * -1, invertInfo[2] * -1);
+                    }
+
+                }
                 //*/
-                #endregion
+            }
+        }
 
-                /// Throw an error, if the data has not been assigned too
-                if (newInvertRot.Contains(0f) || newSwapAngles.All(number => number == 0))
-                {
-                    throw new Exception($"New values not properly configured.\nnewInvertRot = [ {newInvertRot[0]}, {newInvertRot[1]}, {newInvertRot[2]} ]\nnewSwapAngles = [ {newSwapAngles[0]}, {newSwapAngles[1]}, {newSwapAngles[2]} ]");
-                }
+        /*
+        private void CheckForInverted()
+        {
+            float[] invertInfo;
 
+            foreach (GameMaster.IGameObject aGameObject in gameObjects)
+            {
                 if (aGameObject is GameObject)
                 {
-                    ((GameObject)aGameObject).setInvertRotation((float[])newInvertRot.Clone());
-                    ((GameObject)aGameObject).setSwapAngles((int[])newSwapAngles.Clone());
+                    invertInfo = ((GameObject)aGameObject).getInvertRotation();
+
+                    if (Math.Abs(((GameObject)aGameObject).getAngles()[1]) == 180f)
+                    {
+                        /// Set a value for upsidedown-ness based on how upsidedown (vertical rotation) the object is
+                        //((GameObject)aGameObject).setInvertRotation(new int[] { invertInfo[0] * -1, invertInfo[1], invertInfo[2] });
+
+                    }
+
                 }
 
                 else if (aGameObject is CompositeGameObject)
                 {
-                    /// Do the same for it's subordinates
-                    ((CompositeGameObject)aGameObject).StandardiseAxes();
+                    invertInfo = ((CompositeGameObject)aGameObject).getInvertRotation();
 
-                    ((CompositeGameObject)aGameObject).setInvertRotation((float[])newInvertRot.Clone());
-                    ((CompositeGameObject)aGameObject).setSwapAngles((int[])newSwapAngles.Clone());
+                    if (Math.Abs(((CompositeGameObject)aGameObject).getAngles()[1]) == 180f)
+                    {
+                        /// Set a value for upsidedown-ness based on how upsidedown (vertical rotation) the object is
+                        //((CompositeGameObject)aGameObject).setInvertRotation(new int[] { invertInfo[0] * -1, invertInfo[1], invertInfo[2] });
+                    }
+
+                    /// Do the same for it's subordinates
+                    ((CompositeGameObject)aGameObject).CheckForInverted();
 
                 }
 
             }
         }
+        //*/
 
         /// These Attributes Have Defaults
         Vector3 objectPos;
         float objectScale;
-        float[] angles = new float[3];
-        float[] invertRot = new float[] { 1f, 1f, 1f };
-        int[] swapAngles = new int[] { 0, 1, 2 };
+        bool hide = false;
+        float[] angles = new float[3] { 0.0f, 0.0f, 0.0f };
+        float[] invertRot = new float[3] { 1.0f, 1.0f, 1.0f };
+        int[] swapAngles = new int[3] { 0, 1, 2 };
 
         /// Total Number of these objects
         private static int count;        
 
         /// The CompositeGameObject Constructor. Here is where all the information is initialized and set (including default values), upon creation of the object
-        public CompositeGameObject(float objectScaleIn = 1.0f, Vector3? objectPosIn = null, float[] anglesIn = null)
+        public CompositeGameObject(float objectScaleIn = 1.0f, Vector3? objectPosIn = null, float[] anglesIn = null, float[] invertIn = null)
         {
-            float[] angles = anglesIn ?? new float[] { 0.0f, 0.0f, 0.0f };
             objectScale = objectScaleIn;
 
             objectPos = objectPosIn ?? new Vector3(0.0f);               /// (0, 0, 0) is the centre of the world
 
-            setAngles(angles);
+            angles = anglesIn ?? angles;
+            invertRot = invertIn ?? invertRot;
+
+            setAngles(new float[] { angles[0], angles[1], angles[2] });
+            setInvertRotation(new float[] { invertRot[0], invertRot[1], invertRot[2] });
 
             count++;
         }
@@ -162,22 +161,6 @@ namespace RubixCubeSolver.Objects
             count = value;
         }
 
-        /*
-        public float[] getAngles()
-        {
-            return angles;
-        }
-        public void setAngles(float horizontalAngleIn = 0.0f, float verticalAngleIn = 0.0f)
-        {
-            /// Neither value can be above 360 degrees
-            /// This however gives these angles a range between -360 and 360
-            horizontalAngleIn %= 360;
-            verticalAngleIn %= 360;
-
-            angles[0] = horizontalAngleIn;
-            angles[1] = verticalAngleIn;
-        }
-        //*/
         public float[] getAngles()
         {
             return angles;
@@ -193,26 +176,11 @@ namespace RubixCubeSolver.Objects
             /// This however gives these angles a range between -360 and 360
             for (int i = 0; i < 3; i++)
             {
-                /// Here, control which angles affect which axis - most useful for GameObjects part of CompositeGameObjects, and rotations are not according to standardised axes
                 angles[i] = anglesIn[i] % 360;
             }
 
         }
-        public void setAngles(float XAngle, float YAngle, float ZAngle)
-        {
-            setAngles(new float[3] { XAngle, YAngle, ZAngle });
-        }
 
-        /*
-        public int getInvertRotation()
-        {
-            return invertRot;
-        }
-        public void setInvertRotation(int value)
-        {
-            invertRot = value;
-        }
-        //*/
         public float[] getInvertRotation()
         {
             return invertRot;
@@ -258,16 +226,74 @@ namespace RubixCubeSolver.Objects
         {
             setSwapAngles(new int[3] { Xindex, Yindex, Zindex });
         }
-        
-        int[] ReturnSwappedList(int[] list, int index1, int index2)
+
+        public void SwapAngles(int index1, int index2)
         {
-            int[] newSwapAngles = list;
+            int temp = swapAngles[index1];
+            swapAngles[index1] = swapAngles[index2];
+            swapAngles[index2] = temp;
+        }
 
-            int temp = newSwapAngles[index1];
-            newSwapAngles[index1] = newSwapAngles[index2];
-            newSwapAngles[index2] = temp;
+        public void ShiftAngles(int number)
+        {
+            int[] shiftedAngles = new int[3];
 
-            return newSwapAngles;
+            for (int i = 0; i < shiftedAngles.Length; i++)
+            {
+                shiftedAngles[i] = swapAngles[(i + number) % 3];
+            }
+        }
+
+        public bool getHide()
+        {
+            return hide;
+        }
+        public void setHide(bool value)
+        {
+            hide = value;
+        }
+
+        public void ObjectsHide(int[] indexes, bool hide)
+        {
+            foreach (int index in indexes)
+            {
+                if (gameObjects.ElementAtOrDefault(index) == default)
+                {
+                    throw new IndexOutOfRangeException($"There is no gameObject at this index: {index}");
+                }
+
+                GameMaster.IGameObject item = gameObjects[index];
+
+                /// If this game object is a GameObject
+                if (item is GameObject)
+                {
+                    ((GameObject)item).setHide(hide);
+                }
+
+                /// If this game object is a CompositeGameObject
+                else if (item is CompositeGameObject)
+                {
+                    ((CompositeGameObject)item).setHide(hide);
+                }
+            }
+        }
+
+        public void ShowAllObjects()
+        {
+            foreach (GameMaster.IGameObject item in gameObjects)
+            {
+                /// If this game object is a GameObject
+                if (item is GameObject)
+                {
+                    ((GameObject)item).setHide(false);
+                }
+
+                /// If this game object is a CompositeGameObject
+                else if (item is CompositeGameObject)
+                {
+                    ((CompositeGameObject)item).setHide(false);
+                }
+            }
         }
 
         public void DisposeThisCompositeGameObject()
@@ -314,6 +340,11 @@ namespace RubixCubeSolver.Objects
             /// This list will hold all of the GameObjects that have been converted over.
             List<GameObject> theGameObjects = new List<GameObject>();
 
+            if (hide)
+            {
+                return theGameObjects;
+            }
+
             /// For every game object in this CompositeGameObject
             for (int i = 0; i < gameObjects.Count; i++)
             {
@@ -339,86 +370,86 @@ namespace RubixCubeSolver.Objects
             /// For each gameObject in the list of GameObjects to convert over from a Composite, to regular GameObjects
             foreach (GameObject aGameObject in theGameObjects)
             {
+                #region OLD CODE
+                /*
                 /// Set attributes, depending on the CompositeGameObejct
 
-                #region Test Stuff
-                //Vector3 theObjectPos = objectPos;
+                /// If there is no rotation, then this is definitely the position to rotate by
+                /// aGameObject.setPosition(aGameObject.getPosition() + objectPos);
 
-                //Matrix3 moveFromobjectPosToCentre = new Matrix3() { M11 = 1, M12 = 0, M13 = theObjectPos.X, M21 = 0, M22 = 1, M23 = theObjectPos.Y, M31 = 0, M32 = 0, M33 = theObjectPos.Z };
+                Matrix3 transform = Matrix3.CreateRotationY(MathHelper.DegreesToRadians(angles[1])) * Matrix3.CreateRotationZ(MathHelper.DegreesToRadians(angles[2])) * Matrix3.CreateRotationX(MathHelper.DegreesToRadians(angles[0]));
 
-                //Matrix3 moveToobjectPosFromCentre = new Matrix3() { M11 = 1, M12 = 0, M13 = -theObjectPos.X, M21 = 0, M22 = 1, M23 = -theObjectPos.Y, M31 = 0, M32 = 0, M33 = -theObjectPos.Z };
+                //aGameObject.setPosition(objectPos + transform * aGameObject.getPosition());
 
-                //Matrix3 fullRotation = moveFromobjectPosToCentre * (Matrix3.CreateRotationY(aGameObject.getAngles()[0]) * Matrix3.CreateRotationX(aGameObject.getAngles()[1])) * moveToobjectPosFromCentre;
+                aGameObject.setPosition(objectPos + objectScale * (transform * aGameObject.getPosition()));
+                aGameObject.setScale(aGameObject.getScale() * objectScale);
 
-                //aGameObject.setPosition(aGameObject.getPosition() + fullRotation * objectPos);
+                float[] invertInfo = aGameObject.getInvertRotation();
+                float[] angleInfo = aGameObject.getAngles();
+                //float[] newAngles = new float[3];
+
+                aGameObject.setAngles(angleInfo[0] + angles[0], angleInfo[1] + angles[1], angleInfo[2] + angles[2]);
+
+                aGameObject.ReorderAngles(swapAngles);
+
+                aGameObject.setInvertRotation(invertInfo[0] * invertRot[0], invertInfo[1] * invertRot[1], invertInfo[2] * invertRot[2]);
+
+                /*
+                for (int i = 0; i < 3; i++)
+                {
+                    newAngles[swapAngles[i]] = angleInfo[i] + angles[i];
+                }
+
+                aGameObject.setAngles(newAngles);
+                //*/
                 #endregion
 
-                /// If there is no rotation, then this is definitely the position to rotate by                
-
-                /// Must invert the rotation here
-                /*
-                float[] invertRotInfo = (float[])aGameObject.getInvertRotation().Clone();
-
-                for (int i = 0; i < invertRotInfo.Length; i++)
+                if (aGameObject.getHide())
                 {
-                    invertRotInfo[i] = invertRotInfo[i]  * -1f;
+                    continue;
                 }
-                //*/
 
-                /*
-                Matrix4 transform = GameMaster.RotateInXYZAroundPoint(new Vector3(0.0f), angles, new float[] { -1f, -1f, -1f }, null);
-                aGameObject.setPosition(objectPos + objectScale * new Vector3(transform * new Vector4(aGameObject.getPosition(), 1.0f)));
-                //*/
+                /// aGameObject has 3 features. A rotation, a position and a scale.
 
                 //*
-                Matrix4 transform = GameMaster.RotateInXYZAroundPoint(new Vector3(0.0f), angles, new float[] { -1f, -1f, -1f }, null);
-                aGameObject.setPosition(objectPos + objectScale * new Vector3(transform * new Vector4(aGameObject.getPosition(), 1.0f)));
+                Matrix4 localTransform = aGameObject.setRotatedAndPositionedVertices(true);
+                float[] originalVertices = aGameObject.getVertices();
+                float[] newVertices = new float[originalVertices.Length];
                 //*/
 
-                /*
-                Matrix4 transform = GameMaster.RotateInXYZAroundPoint(new Vector3(0.0f), angles, new float[] { -1f, -1f, -1f }, null) * Matrix4.CreateTranslation(objectPos) * Matrix4.CreateScale(objectScale);
-                aGameObject.setPosition(objectPos + objectScale * new Vector3(transform * new Vector4(aGameObject.getPosition(), 1.0f)));
-                //*/
+                /// Transform each vertex, by transform
+                Matrix4 transform = GameMaster.RotateInXYZAroundPoint(new Vector3(0.0f), angles) * Matrix4.CreateScale(objectScale) * Matrix4.CreateTranslation(objectPos);
 
-                transform = GameMaster.RotateInXYZAroundPoint(new Vector3(0.0f), angles, null, null);
-                aGameObject.setTransform(aGameObject.getTransform() * transform);
-
-
-                #region Set new Vertices
-
-                /*
-                float[] vertexInfo = aGameObject.getVertices();
-                float[] newVertices = new float[vertexInfo.Length];
-                for (int i = 0; i < vertexInfo.Length / 3; i++)
+                /// Repeat for every vertex available in the GameObject
+                //*
+                for (int k = 0; k < newVertices.Length / 3; k++)
                 {
-                    /// Initialize the vertex that will be transformed (in this round)
-                    Vector3 theVertex = new Vector3();
-                    for (int j = 0; j < 3; j++)
-                    {
-                        theVertex[j] = vertexInfo[(i * 3) + j];
-                    }
+                    /// For each Vertex
+                    Vector4 theVertex = new Vector4(originalVertices[k * 3], originalVertices[k * 3 + 1], originalVertices[k * 3 + 2], 1.0f);
 
                     /// Transform the vertex
-                    Vector4 transformedVector = transform * new Vector4(theVertex, 1.0f);
+                    Vector4 transformedVertex = transform * localTransform * theVertex;
 
-                    /// Add new vertex to the set of newVertices
+                    /// Add the vertex to the array of vertices
                     for (int j = 0; j < 3; j++)
                     {
-                        newVertices[(i * 3) + j] = transformedVector[j];
+                        newVertices[k * 3 + j] = transformedVertex[j];
                     }
-
                 }
+
                 aGameObject.setVertices(newVertices);
                 //*/
-                #endregion
 
-                aGameObject.setScale(aGameObject.getScale() * objectScale);
-                aGameObject.setAngles(aGameObject.getAngles()[0] + angles[0], aGameObject.getAngles()[1] + angles[1], aGameObject.getAngles()[2] + angles[2]);
-                //aGameObject.setInvertRotation(aGameObject.getInvertRotation() * invertRot);
+                aGameObject.setPosition(new Vector3(new Vector4(objectPos, 1.0f) + (transform * new Vector4(aGameObject.getPosition(), 1.0f))));
+
+                /// Here, all the objects are set to rotate to the standardised x, y, z axis (every object in default state is always facing in one of these directions)
+                /// If the object faces 90 degrees, then swap X for Z axis, and swap Z axis for minus X axis
+
             }
 
             return theGameObjects;
         }
+
     }
 
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
@@ -23,7 +24,7 @@ namespace RubixCubeSolver.Objects
 
         private bool pause = true;
 
-        public static int _frameTime;
+        public static int frameTime;
         private int _prevTime;
 
         /// Creating the OpenTK window class to our Game window
@@ -45,7 +46,6 @@ namespace RubixCubeSolver.Objects
 
         #endregion
 
-        CompositeGameObject theGameObject;
         const bool debug = true;
 
 
@@ -77,24 +77,20 @@ namespace RubixCubeSolver.Objects
             /// The lighting shaders uses the lighting.frag shader which is what a large part of this chapter will be about
             lightingShader = new Shader(_shaderFilePath + "shader.vert", _shaderFilePath + "lighting.frag");
 
-            /// We initialize the camera so that it is 3 units back from where the rectangle is and give it the proper aspect ratio
-            _camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
+            /// We initialize the camera so that it is 2 units back from where the rectangle is and give it the proper aspect ratio
+            _camera = new Camera(Vector3.UnitZ * 1, Width / (float)Height);
 
-            //AddGameObjects(new Plane(lightingShader, 1.8f, 0f, 0f, position: new Vector3(1.0f), color: new Vector3(0.7f, 0.5f, 0.8f)));
-            //AddGameObjects(new Cube(lightingShader));
+            /// Test 1
+            //AddGameObjects(new Cube(lightingShader, 0.1f, new Vector3(-1000.0f), new Vector3(1.0f)));
+            //AddGameObjects(new Cube(lightingShader, 0.75f, new Vector3(1.0f), new Vector3(0.5f, 0.2f, 0.7f)));
 
-            //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 1.0f, 90f, 0f, position: new Vector3(0.0f)));
-            //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(0.0f)));
-            //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(2.0f, 0.0f, 0.0f)));
+            /// Test 2
+            //AddGameObjects(new RubiksCubePiece(lightingShader, 2, scale: 1f, position: new Vector3(1.2f), angles: new float[] { 0.0f, 0.0f, 0.0f }));
+            //AddGameObjects(new RubiksCubePiece(lightingShader, 1, 2, 3, scale: 0.99f, position: new Vector3(-1.2f), angles: new float[] { 0.0f, 0.0f, 0.0f }));
 
-            AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(0.0f)));
-            AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(2.0f, 0.0f, 0.0f)));
-
-            //AddGameObjects(new RubiksCube(lightingShader, scale: 0.5f, position: new Vector3(0.0f)));
-            //AddGameObjects(new CompositeTest(lightingShader, 4, scale: 0.5f, position: new Vector3(0.0f)));
-
-            //theGameObject = (CompositeGameObject)myGameObjects[0];
-            theGameObject = (CompositeGameObject)myGameObjects[1];
+            /// Test 3
+            AddGameObjects(new RubiksCube(lightingShader, scale: 0.25f, position: new Vector3(0.0f)));
+            AddGameObjects(new RubiksCubeSlice(lightingShader, scale: 0.25f, position: new Vector3(-1.0f, 0.25f, 0.0f)));
 
             base.OnLoad(e);
         }
@@ -104,9 +100,11 @@ namespace RubixCubeSolver.Objects
             /// Clears the screen, using color set in OnLoad
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            _frameTime += 1;
+            if (!pause)
+            {
+                frameTime += 1;
+            }
 
-            UpdateGameObjectsOnlyList();
             DrawAllGameObjects(false, omitVAOs);
 
             /// One area is displayed, while the other is being rendered to. Then, when you call SwapBuffers, the two are reversed. A single-buffered context could have issues such as screen tearing.
@@ -115,6 +113,7 @@ namespace RubixCubeSolver.Objects
             base.OnRenderFrame(e);
         }
 
+        bool[] animationDone = new bool[] { true, true };
         System.Collections.Generic.List<int> omitVAOs = new System.Collections.Generic.List<int>();
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
@@ -150,7 +149,6 @@ namespace RubixCubeSolver.Objects
             const float cameraSpeed = 1.5f;
             const float sensitivity = 0.2f;
 
-            #region Controls
             if (debug)
             {
                 if (input.IsKeyDown(Key.W))
@@ -178,58 +176,217 @@ namespace RubixCubeSolver.Objects
                     _camera.Position -= _camera.Up * cameraSpeed * (float)e.Time; // Down
                 }
 
-                if (input.IsKeyDown(Key.Number1) && (_frameTime > _prevTime + 10))
+                if (input.IsKeyDown(Key.Number1) && (frameTime > _prevTime + 10))
                 {
-                    AddGameObjects(new Cube(lightingShader, scale: rnd.Next(5, 15) / 10f, angles: new float[] { Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f }, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
+                    AddGameObjects(new Cube(lightingShader, scale: rnd.Next(5, 15) / 10f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble())), new float[] { Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f }));
 
-                    _prevTime = _frameTime;
+                    _prevTime = frameTime;
                 }
 
-                if (input.IsKeyDown(Key.Number2) && (_frameTime > _prevTime + 10))
+                if (input.IsKeyDown(Key.Number2) && (frameTime > _prevTime + 10))
                 {
-                    AddGameObjects(new Plane(lightingShader, scale: rnd.Next(5, 15) / 10f, angles: new float[] { Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f }, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
+                    AddGameObjects(new Plane(lightingShader, scale: rnd.Next(5, 15) / 10f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble())), new float[] { Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f }));
 
-                    _prevTime = _frameTime;
+                    _prevTime = frameTime;
                 }
 
-                if (input.IsKeyDown(Key.Number0) && (_frameTime > _prevTime + 10))
+                if (input.IsKeyDown(Key.Number0) && (frameTime > _prevTime + 10))
                 {
                     DisposeAllGameObjects();
 
-                    _prevTime = _frameTime;
+                    _prevTime = frameTime;
+                }
+
+                if (input.IsKeyDown(Key.O) && (frameTime > _prevTime + 10) || !animationDone[0])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    animationDone[0] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Bottom, -1);
+
+                    _prevTime = frameTime;
+                }
+
+                if (input.IsKeyDown(Key.P) && (frameTime > _prevTime + 10) || !animationDone[1])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    animationDone[1] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Bottom, 1);
+
+                    _prevTime = frameTime;
+                }
+
+                if (input.IsKeyDown(Key.RBracket) && (frameTime > _prevTime + 10))
+                {
+                    int[] theColors = new int[54];
+
+                    for (int i = 0; i < 54; i++)
+                    {
+                        theColors[i] = rnd.Next(1, 7);
+                    }
+
+                    ((RubiksCube)myGameObjects[0]).UpdateColors(theColors);
+                    ((RubiksCubeSlice)myGameObjects[1]).UpdateColors(theColors);
+
+                    _prevTime = frameTime;
                 }
 
                 if (input.IsKeyDown(Key.Up))
                 {
-                    theGameObject.setAngles(theGameObject.getAngles()[0] + 1f, theGameObject.getAngles()[1], theGameObject.getAngles()[2]);
+                    foreach (IGameObject theGameObject in myGameObjects)
+                    {
+                        if (theGameObject is GameObject)
+                        {
+                            GameObject gameObject = (GameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0] + 1f, theAngles[1], theAngles[2] });
+                        }
+
+                        else if (theGameObject is CompositeGameObject)
+                        {
+                            CompositeGameObject gameObject = (CompositeGameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0] + 1f, theAngles[1], theAngles[2] });
+                        }
+
+                    }
+
                 }
                 else if (input.IsKeyDown(Key.Down))
                 {
-                    theGameObject.setAngles(theGameObject.getAngles()[0] - 1f, theGameObject.getAngles()[1], theGameObject.getAngles()[2]);
+                    foreach (IGameObject theGameObject in myGameObjects)
+                    {
+                        if (theGameObject is GameObject)
+                        {
+                            GameObject gameObject = (GameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0] - 1f, theAngles[1], theAngles[2] });
+                        }
+
+                        else if (theGameObject is CompositeGameObject)
+                        {
+                            CompositeGameObject gameObject = (CompositeGameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0] - 1f, theAngles[1], theAngles[2] });
+                        }
+
+                    }
                 }
                 if (input.IsKeyDown(Key.Right))
                 {
-                    theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] - 1f, theGameObject.getAngles()[2]);
+                    foreach (IGameObject theGameObject in myGameObjects)
+                    {
+                        if (theGameObject is GameObject)
+                        {
+                            GameObject gameObject = (GameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] - 1f, theAngles[2] });
+                        }
+                        
+                        else if (theGameObject is CompositeGameObject)
+                        {
+                            CompositeGameObject gameObject = (CompositeGameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] - 1f, theAngles[2] });
+                        }
+
+                    }
+
+                    /*
+                    foreach (CompositeGameObject theGameObject in myGameObjects)
+                    {
+                        float[] theAngles = theGameObject.getAngles();
+
+                        theGameObject.setAngles(new float[] { theAngles[0], theAngles[1] - 1f, theAngles[2] });
+                    }
+                    //*/
                 }
                 else if (input.IsKeyDown(Key.Left))
                 {
-                    theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] + 1f, theGameObject.getAngles()[2]);
-                }
-                if (input.IsKeyDown(Key.AltLeft))
-                {
-                    float[] theAngles = theGameObject.getAngles();
+                    foreach (IGameObject theGameObject in myGameObjects)
+                    {
+                        if (theGameObject is GameObject)
+                        {
+                            GameObject gameObject = (GameObject)theGameObject;
 
-                    theGameObject.setAngles(new float[] { theAngles[0], theAngles[1], theAngles[2] - 1f });
-                }
-                else if (input.IsKeyDown(Key.AltRight))
-                {
-                    float[] theAngles = theGameObject.getAngles();
+                            float[] theAngles = gameObject.getAngles();
 
-                    theGameObject.setAngles(new float[] { theAngles[0], theAngles[1], theAngles[2] + 1f });
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] + 1f, theAngles[2] });
+                        }
+
+                        else if (theGameObject is CompositeGameObject)
+                        {
+                            CompositeGameObject gameObject = (CompositeGameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] + 1f, theAngles[2] });
+                        }
+
+                    }
+                }
+                if (input.IsKeyDown(Key.N))
+                {
+                    foreach (IGameObject theGameObject in myGameObjects)
+                    {
+                        if (theGameObject is GameObject)
+                        {
+                            GameObject gameObject = (GameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1], theAngles[2] - 1f });
+                        }
+
+                        else if (theGameObject is CompositeGameObject)
+                        {
+                            CompositeGameObject gameObject = (CompositeGameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1], theAngles[2] - 1f });
+                        }
+
+                    }
+                }
+                else if (input.IsKeyDown(Key.M))
+                {
+                    foreach (IGameObject theGameObject in myGameObjects)
+                    {
+                        if (theGameObject is GameObject)
+                        {
+                            GameObject gameObject = (GameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1], theAngles[2] + 1f });
+                        }
+
+                        else if (theGameObject is CompositeGameObject)
+                        {
+                            CompositeGameObject gameObject = (CompositeGameObject)theGameObject;
+
+                            float[] theAngles = gameObject.getAngles();
+
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1], theAngles[2] + 1f });
+                        }
+
+                    }
                 }
 
                 /// OUTPUT DEBUG INFORMATION
-                if (input.IsKeyDown(Key.Z) && (_frameTime > _prevTime + 10))
+                if (input.IsKeyDown(Key.Z) && (frameTime > _prevTime + 10))
                 {
                     Console.Clear();
 
@@ -245,7 +402,7 @@ namespace RubixCubeSolver.Objects
                         Console.WriteLine(gameObjectsOnlyList[i]);
                     }
 
-                    _prevTime = _frameTime;
+                    _prevTime = frameTime;
                 }
 
                 if (input.IsKeyDown(Key.Escape))
@@ -254,21 +411,21 @@ namespace RubixCubeSolver.Objects
                     pause = true;
                 }
 
-                if (_firstMove) // this bool variable is initially set to true
+                if (_firstMove) /// this bool variable is initially set to true
                 {
                     _lastPos = new Vector2(mouse.X, mouse.Y);
                     _firstMove = false;
                 }
                 else
                 {
-                    // Calculate the offset of the mouse position
+                    /// Calculate the offset of the mouse position
                     var deltaX = mouse.X - _lastPos.X;
                     var deltaY = mouse.Y - _lastPos.Y;
                     _lastPos = new Vector2(mouse.X, mouse.Y);
 
-                    // Apply the camera pitch and yaw (we clamp the pitch in the camera class)
+                    /// Apply the camera pitch and yaw (we clamp the pitch in the camera class)
                     _camera.Yaw += deltaX * sensitivity;
-                    _camera.Pitch -= deltaY * sensitivity; // reversed since y-coordinates range from bottom to top
+                    _camera.Pitch -= deltaY * sensitivity; /// reversed since y-coordinates range from bottom to top
                 }
             }
 
@@ -289,10 +446,16 @@ namespace RubixCubeSolver.Objects
                         _lastPos = new Vector2(mouse.X, mouse.Y);
 
                         /// Apply rotation
-                        float scrollX = theGameObject.getAngles()[0] - deltaX * sensitivity * 1.2f;
-                        float scrollY = MathHelper.Clamp(theGameObject.getAngles()[1] - deltaY * sensitivity * 1.2f, -90.0f, 90.0f);
+                        foreach (CompositeGameObject theGameObject in myGameObjects)
+                        {
+                            float scrollX = theGameObject.getAngles()[0] - deltaX * sensitivity * 1.2f;
+                            float scrollY = MathHelper.Clamp(theGameObject.getAngles()[1] - deltaY * sensitivity * 1.2f, -90.0f, 90.0f);
 
-                        theGameObject.setAngles(scrollX, scrollY, 0.0f);
+                            float[] theAngles = theGameObject.getAngles();
+
+                            theGameObject.setAngles(new float[] { theAngles[0] + scrollY, theAngles[1] + scrollX, theAngles[2] });
+                        }
+                        
                     }
                 }
 
@@ -302,117 +465,6 @@ namespace RubixCubeSolver.Objects
                 }
                 
             }
-
-            #endregion
-
-            #region OLD CODE
-            /*
-            /// If the left mouse button is pressed
-            if (mouse.IsButtonDown(MouseButton.Left))
-            {
-                /// If the mouse was not pressed the previous frame
-                if (mouseNotPressedPrevFrame)
-                {
-                    /// Set the previous position of the mouse to where the mouse currently is, ready for the dragging
-                    prevMouse = mouse;
-
-                    /// Any subsequent frame, the mouse is being held down, and not being re-pressed.
-                    mouseNotPressedPrevFrame = false;
-                }
-
-                /// scrollX is a measure of how much the mouse has moved since it's previous location, in the X direction
-                float scrollX = (mouse.X - prevMouse.X) / mouseCameraSensitivity;
-
-                /// scrollY is a measure of how much the mouse has moved since it's previous location, in the Y direction
-                float scrollY = (mouse.Y - prevMouse.Y) / mouseCameraSensitivity;
-
-                /// Vertical Rotation
-                /// If the next rotation in the Y direction, will not be above 90 degrees or below -90 degrees, which is inbetween -90 and 90 degrees
-                if (Math.Abs(vertRotNum + scrollY) < MathHelper.DegreesToRadians(90f))
-                {
-                    /// Set the current value to rotate by, to the new value (vertRotNum + scrollY)
-                    vertRotNum += scrollY;
-                }
-
-                /// Horizontal Rotation
-                /// Set the current value to rotate by, to the new value (horRotNum + scrollX)
-                horRotNum += scrollX;
-
-                /// Set the previous position of the mouse to where the mouse currently is, ready for the dragging
-                prevMouse = mouse;
-
-            }
-
-            /// If the mouse is not being held down this frame
-            else if (mouse.IsButtonUp(MouseButton.Left))
-            {
-                /// The next press of the mouse, will be the first, of the mouse presses which will cause a dragging motion
-                mouseNotPressedPrevFrame = true;
-            }
-
-            #region OLD CODE (Arrow Keys Camera)
-            
-            #region Rotate Scene
-
-            #region Vertical Rotation
-            if (input.IsKeyDown(Key.Up))
-            {
-                if (vertRotNum - 0.01f > MathHelper.DegreesToRadians(-90f))
-                {
-                    vertRotNum += -0.01f;
-                }
-                
-            }
-
-            else if (input.IsKeyDown(Key.Down))
-            {
-                if (vertRotNum + 0.01f < MathHelper.DegreesToRadians(90f))
-                {
-                    vertRotNum += 0.01f;
-                }
-
-            }
-
-            #endregion
-
-            #region Horizontal Rotation
-            if (input.IsKeyDown(Key.Right))
-            {
-                horRotNum += 0.01f;
-            }
-
-            else if (input.IsKeyDown(Key.Left))
-            {
-                horRotNum += -0.01f;
-            }
-
-            #endregion
-
-            #endregion
-            
-            #endregion
-
-            if (input.IsKeyDown(Key.Escape))
-            {
-                /// Responsible for completing closing application checks and closing the application
-                QuitApp();
-
-                /// If for some reason the application hasn't exited already, then it will here.
-                Exit();
-            }
-
-            /// OUTPUT DEBUG INFORMATION
-            if (input.IsKeyDown(Key.Z))
-            {
-                for (int i = 0; i < getGameObjects().Count; i++)
-                {
-                    Console.WriteLine(getGameObjects()[i]);
-                    //Console.WriteLine(myGameObjectsVAOHandles[i]);
-                }   
-            }
-
-            //*/
-            #endregion
 
             base.OnUpdateFrame(e);
         }
@@ -486,8 +538,7 @@ namespace RubixCubeSolver.Objects
             GL.UseProgram(0);
 
             /// Delete all the resources.
-            DisposeAllGameObjects();
-            //fillerCube.DisposeThisGameObject(true);
+            DisposeAllGameObjects();            
 
             /// Delete Shader
             lightingShader.Dispose();

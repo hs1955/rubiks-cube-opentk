@@ -18,6 +18,7 @@ namespace RubixCubeSolver.Objects
 
         /// List of GameObjects
         public static List<IGameObject> myGameObjects = new List<IGameObject>();
+        public static List<int> myGameObjectsIDs = new List<int>();
 
         public static ref List<IGameObject> getGameObjects()
         {
@@ -26,21 +27,67 @@ namespace RubixCubeSolver.Objects
 
         public static List<GameObject> gameObjectsOnlyList = new List<GameObject>();
 
+        static List<int> VBOs = new List<int>();
+        static List<int> EBOs = new List<int>();
         public static void UpdateGameObjectsOnlyList()
         {
+            /// For every GameObject, if any VAOs are present, delete them
+            foreach (GameObject gameObject in gameObjectsOnlyList)
+            {
+                int VAO = gameObject.getVAOHandle();
+
+                /// Delete any VAOs present (if any)
+                if (VAO != -1)
+                {
+                    /// Each GameObject has a unique VAO, so this will always be deleted whenever this function is called
+                    GL.DeleteVertexArray(VAO);
+                    //GL.Finish();
+                }
+            }
+
             gameObjectsOnlyList.Clear();
 
+            /// Add all the objects in GameObject form
             foreach (var item in myGameObjects)
             {
                 if (item is GameObject)
                 {
-                    gameObjectsOnlyList.Add((GameObject)item);
+                    GameObject gameObject = ((GameObject)item).CloneThisGameObject(false);
+                    gameObject.setRotatedAndPositionedVertices();
+                    gameObjectsOnlyList.Add(gameObject);
                 }
 
                 else if (item is CompositeGameObject)
                 {
                     gameObjectsOnlyList.AddRange(((CompositeGameObject)item).ConvertToGameObjects());
                 }
+            }
+
+            int limit = Math.Min(VBOs.Count, gameObjectsOnlyList.Count);
+
+            /// Assign as many VBOs and EBOs (pairs) as possible to each object
+            for (int i = 0; i < limit; i++)
+            {
+                gameObjectsOnlyList[i].setVBOHandle(VBOs[i]);
+                gameObjectsOnlyList[i].setEBOHandle(EBOs[i]);
+            }
+
+            /// For every GameObject, create a VBO, EBO and VAO
+            foreach (GameObject gameObject in gameObjectsOnlyList)
+            {
+                /// Excecuting this line, makes a VBO, EBO and VAO for aGameObject
+                gameObject.SetupObject(out int VBO, out int EBO);
+
+                if (!VBOs.Contains(VBO))
+                {
+                    VBOs.Add(VBO);
+                }
+
+                if (!EBOs.Contains(EBO))
+                {
+                    EBOs.Add(EBO);
+                }
+                
             }
 
         }
@@ -129,7 +176,7 @@ namespace RubixCubeSolver.Objects
                     Matrix4 model = Matrix4.Identity;
 
                     /// Transform each vertex, by model
-                    model *= RotateInXYZAroundPoint(new Vector3(0.0f), new float[] { gameObject.getAngles()[0], gameObject.getAngles()[1], 0.0f });
+                    model *= RotateInXYZAroundPoint(new Vector3(0.0f), gameObject.getAngles(), gameObject.getInvertRotation(), gameObject.getSwapAngles());
 
                     model *= Matrix4.CreateScale(gameObject.getScale()) * Matrix4.CreateTranslation(gameObject.getPosition());
 
@@ -238,7 +285,7 @@ namespace RubixCubeSolver.Objects
                     preparedMegaObjectsEBOHandles.Add(EBO);
 
                     /// Setup the VAO for this megaObject
-                    VAO = GameObject.SetupVAO(VBO, EBO, Game.lightingShader);
+                    VAO = GameObject.SetupVAO(Game.lightingShader, VBO, EBO);
 
                     /// Add the megaObject to the list of VAOHandles of prepared Objects
                     preparedMegaObjectsVAOHandles.Add(VAO);
@@ -254,235 +301,6 @@ namespace RubixCubeSolver.Objects
 
         }
 
-        /*
-        /// <summary>
-        /// This function updates the prepared list, reordering all the elements, in ascending order of number of vertices.
-        /// This prevents a bug, where rendering an object with less vertices, than the object previously rendered, causes (only) the previously rendered object to have vertices cut off from rendering
-        /// </summary>
-        public static void UpdatePreparedGameObjectList()
-        {
-            UpdateGameObjectsOnlyList();
-
-            preparedGameObjectsList.Clear();
-
-            if (gameObjectsOnlyList.Count == 0)
-            {
-                return;
-            }
-
-            if (gameObjectsOnlyList.Count == 1)
-            {
-                preparedGameObjectsList.Add(gameObjectsOnlyList[0]);
-                return;
-            }
-
-            for (int i = 0; i < verticesOrder.Length; i++)
-            {
-                string theType = verticesOrder[i];
-
-                for (int j = 0; j < gameObjectsOnlyList.Count; j++)
-                {
-                    GameObject gameObject = gameObjectsOnlyList[j];
-                    string itsType;
-
-                    /// If this object is a clone, you need a different way of identifying it, since it's type is simpily GameObject, and is too vague for use
-                    if (gameObject.GetType().ToString().EndsWith("GameObject"))
-                    {
-                        itsType = gameObject.getMyType();
-                    }
-
-                    /// If the object is not a clone, use gain it's orginal type in the regular way
-                    else
-                    {
-                        itsType = gameObject.GetType().ToString();
-                    }
-
-                    if (itsType.EndsWith(theType))
-                    {
-                        preparedGameObjectsList.Add(gameObject);
-                    }
-                }
-
-            }
-        }
-        //*/
-
-        /*
-        public static void UpdatePreparedGameObjectList()
-        {
-            UpdateGameObjectsOnlyList();
-
-            /// If there is no objects, there is nothing to prepare
-            if (gameObjectsOnlyList.Count == 0)
-            {
-                preparedGameObjectsList.Clear();
-                return;
-            }
-
-            if (preparedGameObjectsList.Count == 0)
-            {
-                preparedGameObjectsList.Add(gameObjectsOnlyList[0]);
-            }
-
-            /// If there's 0 or 1 GameObjects in the world, there are no objects to separate here, so render straight away
-            if (gameObjectsOnlyList.Count < 2)
-            {
-                preparedGameObjectsList.Clear();
-                preparedGameObjectsList.AddRange(gameObjectsOnlyList);
-
-                return;
-            }
-
-            /// Must delete objects that no longer exist
-            /// For every GameObject in the preparedGameObjectsList
-            foreach (GameObject gameObject in preparedGameObjectsList)
-            {
-                /// If it is not in the gameObjectsOnlyList
-                if (!gameObjectsOnlyList.Contains(gameObject))
-                {
-                    /// Delete information
-                    preparedGameObjectsList.Remove(gameObject);
-                }
-            }
-
-            /// Check and insert elements into the list
-            /// For every GameObject in the gameObjectsOnlyList
-            foreach (GameObject gameObject in gameObjectsOnlyList)
-            {
-                /// If the prepared list does not contain this gameObject, then this object is new and must be added
-                if (!preparedGameObjectsList.Contains(gameObject))
-                {
-                    /// If for some reason, there is only one type of GameObject available
-                    if (verticesOrder.Length == 1)
-                    {
-                        /// Just add the gameObject - there will ont be any conflict in rendering, due to different GameObjects, since there are not any different GameObjects in this specific case
-                        preparedGameObjectsList.Add(gameObject);
-                        continue;
-                    }
-
-                    else
-                    {
-                        /// For each GameObject Type
-                        /// (Run at least once)
-                        for (int i = 0; i < verticesOrder.Length - 1; i++)
-                        {
-                            if (gameObject.GetType().ToString().EndsWith(verticesOrder[0]))
-                            {
-                                preparedGameObjectsList.Insert(0, gameObject);
-
-                                /// This object has been added, so there is no reason to check further
-                                continue;
-                            }
-
-                            /// This part inserts the rest of the GameObjects in the order specified by the verticesOrder (which is based on the number of vertices each GameObject has)
-                            else if (gameObject.GetType().ToString().EndsWith(verticesOrder[i]))
-                            {
-                                for (int j = 0; j < preparedGameObjectsList.Count - 1; j++)
-                                {
-                                    /// Insert where the first object of the same type lies
-                                    if (preparedGameObjectsList[j].GetType().ToString().EndsWith(verticesOrder[i]) && !preparedGameObjectsList[j + 1].GetType().ToString().EndsWith(verticesOrder[i]))
-                                    {
-                                        preparedGameObjectsList.Insert(j, gameObject);
-                                        break;
-                                    }
-                                }
-
-                                /// This object has been added, so there is no reason to check further
-                                continue;
-                            }
-
-                            /// If the GameObject is of the final type in verticesOrder
-                            else if (gameObject.GetType().ToString().EndsWith(verticesOrder[verticesOrder.Length - 1]))
-                            {
-                                /// Insert where the first object of the same type lies
-                                for (int j = 0; j < preparedGameObjectsList.Count - 1; j++)
-                                {
-                                    if (preparedGameObjectsList[j].GetType().ToString().EndsWith(verticesOrder[verticesOrder.Length - 2]) && preparedGameObjectsList[j + 1].GetType().ToString().EndsWith(verticesOrder[verticesOrder.Length - 1]))
-                                    {
-                                        preparedGameObjectsList.Insert(j, gameObject);
-                                        break;
-                                    }
-                                }
-
-                                /// This object has been added, so there is no reason to check further
-                                continue;
-                            }
-                        }
-
-                        /// If the object's type is the first to be rendered, insert at the start of the prepared list
-                        //if (preparedGameObjectsList[j].GetType().ToString() == verticesOrder[0])
-                          //  preparedGameObjectsList.Insert(0, gameObject);
-
-                        //else if (preparedGameObjectsList[j].GetType().ToString() == verticesOrder[1])
-
-                            /// Insert where the first object of the same type lies
-                          //  preparedGameObjectsList.Insert(
-                                preparedGameObjectsList.FindIndex(thisGameObject => thisGameObject.GetType().ToString() == verticesOrder[0] && thisGameObject.GetType().ToString() == verticesOrder[1])
-                                    , gameObject);
-                        
-                    }
-                }
-            }
-        }
-        /*
-        /// <summary>
-        /// This function returns a list of all the GameObjects to render, except there is an empty GameObject, between objects of different types, to stop them conflicting with each other.
-        /// </summary>
-        /// <returns> A list of all the GameObjects to render, except there is an empty GameObject, between objects of different types, to stop them conflicting with each other. </returns>
-        public static void UpdatePreparedGameObjectList()
-        {
-            UpdategameObjectsOnlyList();
-
-            if (preparedGameObjectsList.Count == 0)
-            {
-                preparedGameObjectsList.AddRange(gameObjectsOnlyList);
-            }
-
-            /// If there's 0 or 1 GameObjects in the world, there are no objects to separate here, so render straight away
-            if (gameObjectsOnlyList.Count < 2)
-            {
-                preparedGameObjectsList.Clear();
-                preparedGameObjectsList.AddRange(gameObjectsOnlyList);
-
-                return;
-            }
-
-            /// Add all the GameObjects in
-            for (int i = 0; i < gameObjectsOnlyList.Count; i++)
-            {
-                if (!preparedGameObjectsList.Contains(gameObjectsOnlyList[i]))
-                {
-                    preparedGameObjectsList.Add(gameObjectsOnlyList[i]);
-                }
-            }
-
-            /// Add and remove empty objects, where necessary
-            for (int i = 0; i < preparedGameObjectsList.Count - 1; i++)
-            {
-                /// If the next object / preparedGameObjectsList[i + 1] is a GameObject, then preparedGameObjectsList[i], and preparedGameObjectsList[i + 2] have been seperated, otherwise, they have not been seperated
-                if (!(preparedGameObjectsList[i + 1].GetType().ToString() == "GameObject"))
-                {
-                    /// If the types of preparedGameObjectsList[i] and preparedGameObjectsList[i + 1] are not the same, separate them
-                    if (preparedGameObjectsList[i].GetType() != preparedGameObjectsList[i + 1].GetType())
-                    {
-                        /// This is an empty GameObject, and does not appear at all when rendered.
-                        preparedGameObjectsList.Insert(i + 1, new GameObject(new float[3] { 1.0f, 1.0f, 1.0f }, new uint[1] { 0 }, Game.lightingShader));
-                        //prepGameObjects.Add(new GameObject(new float[0], new uint[0], Game.lightingShader));
-                    }
-                }
-
-                /// If an empty GameObject is inbetween two objects of the same type
-                else if ((i < preparedGameObjectsList.Count - 2) && preparedGameObjectsList[i].GetType() == preparedGameObjectsList[i + 2].GetType() && preparedGameObjectsList[i + 1].GetType().ToString() == "GameObject")
-                {
-                    preparedGameObjectsList[i + 1].DisposeThisGameObject();
-                    preparedGameObjectsList.RemoveAt(i + 1);
-                    i--;
-                }
-            }
-
-        }
-        //*/
-
         /// <summary>
         /// Adds GameObjects, so they can be drawn.
         /// NOTE: Multiple of the same GameObjects will use the SAME VBOs and EBOs. 
@@ -496,8 +314,25 @@ namespace RubixCubeSolver.Objects
             {
                 /// Add theGameObject to the list of GameObjects
                 myGameObjects.Add(theGameObject);
+                myGameObjectsIDs.Add(ReturnFreeID());
 
             }
+        }
+
+        /// <summary>
+        /// Returns an ID which must be added to the list of IDs
+        /// </summary>
+        public static int ReturnFreeID()
+        {
+            for (int i = 0; i < myGameObjectsIDs.Count + 1; i++)
+            {
+                if (!myGameObjectsIDs.Contains(i))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         /// <summary>
@@ -672,14 +507,10 @@ namespace RubixCubeSolver.Objects
         /// <param name="objectScale"> Defaults to 1 </param>
         /// <param name="objectColorInput"> Defaults to (1.0, 0.3, 0.31), AKA Pink </param>
         /// <param name="lightColorInput"> Defaults to (1, 1, 1), AKA pure white light </param>
-        public static void Draw(int handleVAO, uint[] indices, Shader shader, Matrix4 myTransform, float[] anglesIn = null, Vector3? Position = null, float Scale = 1.0f, Vector3? Color = null, Vector3? lightColor = null, float[] invertRotIn = null, int[] swapAnglesIn = null)
+        public static void Draw(int handleVAO, uint[] indices, Shader shader, Vector3? position = null, float scale = 1.0f, Vector3? Color = null, Vector3? lightColor = null, float[] angles = null, float[] invertRot = null, int[] swapAngles = null)
         {
-            float[] angles = anglesIn ?? new float[] { 0.0f, 0.0f, 0.0f };
-            float[] invertRot = invertRotIn ?? new float[] { 1f, 1f, 1f };
-            int[] swapAngles = swapAnglesIn ?? new int[] { 0, 1, 2 };
-
             /// Sets certain values to their defaults
-            Vector3 objectPosition = Position ?? new Vector3(0.0f, 0.0f, 0.0f);     /// Default: The centre of the world
+            Vector3 objectPosition = position ?? new Vector3(0.0f, 0.0f, 0.0f);     /// Default: The centre of the world
 
             Vector3 objectColor = Color ?? new Vector3(1.0f, 0.3f, 0.31f);          /// Default: This is a pink color
 
@@ -687,23 +518,22 @@ namespace RubixCubeSolver.Objects
 
             Matrix4 model = Matrix4.Identity;
 
+            /// Set the Transformation Matrix model
+
+            /// Move, Scale and Rotate the object
+
+            /// Last transformation, is rotating the object around it's centre
+            model *= RotateInXYZAroundPoint(new Vector3(0.0f), angles, invertRot, swapAngles);
+
+            /// Scale and move the object into the correct space in the world
+            model *= Matrix4.CreateScale(scale) * Matrix4.CreateTranslation(objectPosition);
+
             /// Load the VAO (which contains our VBO, EBO, and Shader)
             GL.BindVertexArray(handleVAO);
 
             /// Pass Colors to the Shader, to produce an output color
             shader.SetVector3("objectColor", objectColor);
             shader.SetVector3("lightColor", objectlightColor);
-
-            /// Set the Transformation Matrix model
-
-            /// Move, Scale and Rotate the object
-            /// Last transformation, is rotating the object around it's centre
-            //model *= RotateInXYZAroundPoint(new Vector3(0.0f), null, new float[] { -1f, -1f, -1f }, null);
-
-            model *= myTransform;
-
-            /// Scale and move the object into the correct space in the world
-            model *= Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation(objectPosition);
 
             /// Pass Transformation Matrices to the Shader
             /// IMPORTANT: OpenTK's matrix types are transposed from what OpenGL would expect - rows and columns are reversed.
@@ -797,7 +627,7 @@ namespace RubixCubeSolver.Objects
 
             if (isIndexOfPreparedList)
             {
-                //Draw(preparedMegaObjectsVAOHandles[gameObjectIndex], preparedMegaObjectsIndices[gameObjectIndex], Game.lightingShader, new float[] { 0.0f, 0.0f, 0.0f }, Color: preparedMegaObjectsColors[gameObjectIndex]);
+                Draw(preparedMegaObjectsVAOHandles[gameObjectIndex], preparedMegaObjectsIndices[gameObjectIndex], Game.lightingShader, null, 1.0f, preparedMegaObjectsColors[gameObjectIndex], lightColor, null, null, null);
 
                 return;
             }
@@ -806,7 +636,8 @@ namespace RubixCubeSolver.Objects
             {
                 GameObject gameObject = gameObjectsOnlyList[gameObjectIndex];
 
-                Draw(gameObject.getVAOHandle(), gameObject.getIndices(), gameObject.getShader(), gameObject.getTransform(), gameObject.getAngles(), gameObject.getPosition(), gameObject.getScale(), gameObject.getColor(), lightColor, gameObject.getInvertRotation(), gameObject.getSwapAngles());
+                //Draw(gameObject.getVAOHandle(), gameObject.getIndices(), gameObject.getShader(), gameObject.getPosition(), gameObject.getScale(), gameObject.getColor(), lightColor, gameObject.getAngles(), gameObject.getInvertRotation(), gameObject.getSwapAngles());
+                Draw(gameObject.getVAOHandle(), gameObject.getIndices(), gameObject.getShader(), gameObject.getPosition(), 1.0f, gameObject.getColor(), lightColor, null, null, null);
             }
 
         }
@@ -815,177 +646,10 @@ namespace RubixCubeSolver.Objects
         /// Draw all the GameObjects currently added in game
         /// </summary>
         /// <param name="omitVAOs"> The VAOs of objects which should not be drawn </param>
-
-        /*
-         public static void DrawAllGameObjects(List<int> omitVAOs = null)
-        {
-            /// If there's nothing to omit from being drawn
-            if (omitVAOs == null || omitVAOs.Count == 0)
-            {
-                //UpdatePreparedGameObjectList();
-                UpdateGameObjectsOnlyList();
-
-                /// Draw all GameObjects and information
-                for (int i = 0; i < gameObjectsOnlyList.Count; i++)
-                {
-                    /// Again, since we aren't after a specific object, it makes sense to draw using the index of the game object in the myGameObjects List
-                    DrawWithIndex(i, false);
-                }
-            }
-
-            /// There are some objects which cannot be drawn
-            else
-            {
-                /// For each GameObject, if it exists in the omitVAOs, do not draw
-                for (int i = 1; i < myGameObjects.Count + 1; i++)
-                {
-                    /// If a gameobject with the specified VAO exists, and the VAO is not in the list of VAOs to not draw
-                    if ( (ObtainGameObjectIndex(i) != -1) && !omitVAOs.Contains(i))
-                    {
-                        /// Draw this particular GameObject, by using it's VAO
-                        DrawWithVAO(i);
-                    }
-                }
-            }
-        }
-        //*/
-        /*
-        public static void DrawAllGameObjects(List<int> omitVAOs = null)
-        {
-            omitVAOs = omitVAOs ?? new List<int>();
-
-            UpdateGameObjectsOnlyList();
-            //UpdatePreparedGameObjectList();
-
-            #region RAYCASTING APPROACH
-            
-            omitVAOs.Clear();
-            /// Add every object VAO to the omitVAOs
-            foreach (var item in gameObjectsOnlyList)
-            {
-                omitVAOs.Add(item.getVAOHandle());
-            }
-
-            Vector3 startingPositionVector = new Vector3(0.0f, 0.0f, 3.0f);
-            //Vector3 startingPositionVector = _camera.Position;
-
-            foreach (GameObject gameObjectForLine in gameObjectsOnlyList)
-            {
-                /// The direction of the line, from the camera, to the centre of the object
-                Vector3 directionVector = gameObjectForLine.getPosition() - startingPositionVector;
-                /// And set to unit length
-                directionVector.Normalize();
-
-                /// Line: (x, y, z) = _camera.Position + directionVector
-                
-                /// Dictionary to store how close each object that intersects with the line is.
-                Dictionary<int, float> VAOTOClosenessPairs = new Dictionary<int, float>();
-
-                foreach (GameObject gameObjectForCuboid in gameObjectsOnlyList)
-                {
-                    gameObjectForCuboid.genAndOutLongestXYZ(out float lengthX, out float lengthY, out float lengthZ);
-
-                    int VAOofQuestion = gameObjectForCuboid.getVAOHandle();
-
-                    /// These are the cuboid corner most verticies positions
-                    Vector3 objectCuboidVertex1 = new Vector3(-lengthX / 2 + gameObjectForCuboid.getPosition()[0], -lengthY / 2 + gameObjectForCuboid.getPosition()[1], -lengthZ / 2 + gameObjectForCuboid.getPosition()[2]) * gameObjectForCuboid.getScale();
-                    Vector3 objectCuboidVertex2 = new Vector3(lengthX / 2 + gameObjectForCuboid.getPosition()[0], lengthY / 2 + gameObjectForCuboid.getPosition()[1], lengthZ / 2 + gameObjectForCuboid.getPosition()[2]) * gameObjectForCuboid.getScale();
-
-                    /// CHECKS
-                    /// The limit of the view of the camera is 100 units, We do not necessarily have to check all 100 units.
-                    /// THIS VALUE OF I IS ALSO THE VALUE OF CLOSENESS!!!
-                    for (float i = 0.0f; i < 3.0f; i+=0.05f)
-                    {
-                        /// If the line could intersect with the cuboid in the x direction
-                        bool xIntersect = startingPositionVector[0] + directionVector[0] * i > objectCuboidVertex1[0] && startingPositionVector[0] + directionVector[0] * i < objectCuboidVertex2[0];
-
-                        if (xIntersect)
-                        {
-                            /// If the line could intersect with the cuboid in the y direction
-                            bool yIntersect = startingPositionVector[1] + directionVector[1] * i > objectCuboidVertex1[1] && startingPositionVector[1] + directionVector[1] * i < objectCuboidVertex2[1];
-
-                            if (yIntersect)
-                            {
-                                /// If the line could intersect with the cuboid in the z direction
-                                bool zIntersect = startingPositionVector[2] + directionVector[2] * i > objectCuboidVertex1[2] && startingPositionVector[2] + directionVector[2] * i < objectCuboidVertex2[2];
-
-                                /// If line does intersect with cuboid, remove from the omitVAOs
-                                if (zIntersect)
-                                {
-                                    /// Keep checking until found collision with cuboid
-                                    VAOTOClosenessPairs.Add(VAOofQuestion, i);
-                                    break;
-                                    
-                                }
-                            }
-                        }
-
-                    }
-
-                }
-
-                if (VAOTOClosenessPairs.Values.Count != 0)
-                {
-                    /// Remove the closest objects, from the objects to omit from rendering / allow these objects to render
-                    float[] sortedListofValues = new float[VAOTOClosenessPairs.Count];
-                    VAOTOClosenessPairs.Values.CopyTo(sortedListofValues, 0);
-                    Array.Sort(sortedListofValues);
-
-                    /// Number of cuboids to penetrate. All penetrated cuboids count as being visible to the user
-                    const int penetration = 3;
-                    for (int i = 0; i < penetration; i++)
-                    {
-                        foreach (int key in VAOTOClosenessPairs.Keys)
-                        {
-                            if (sortedListofValues.Length > i && VAOTOClosenessPairs[key] == sortedListofValues[i])
-                            {
-                                omitVAOs.Remove(key);
-                                break;
-                            }
-                        }
-                    }
-                    
-                }
-
-            }
-            
-            #endregion
-
-            /// DRAW OBJECTS
-
-            /// If there's nothing to omit from being drawn
-            if (omitVAOs.Count == 0)
-            {
-                //UpdatePreparedGameObjectList();
-                UpdateGameObjectsOnlyList();
-
-                /// Draw all GameObjects and information
-                for (int i = 0; i < gameObjectsOnlyList.Count; i++)
-                {
-                    /// Again, since we aren't after a specific object, it makes sense to draw using the index of the game object in the myGameObjects List
-                    DrawWithIndex(i, false);
-                }
-            }
-
-            /// There are some objects which cannot be drawn
-            else
-            {
-                /// For each GameObject, if it exists in the omitVAOs, do not draw
-                for (int i = 1; i < gameObjectsOnlyList.Count + 1; i++)
-                {
-                    /// If a gameobject with the specified VAO is not in the list of VAOs to not draw
-                    if (!omitVAOs.Contains(i))
-                    {
-                        /// Draw this particular GameObject, by using it's VAO
-                        DrawWithVAO(i, true);
-                    }
-                }
-            }
-        }
-        //*/
-
         public static void DrawAllGameObjects(bool usePreparedList, List<int> omitVAOs = null)
         {
+            //UpdateGameObjectsOnlyList();
+
             omitVAOs = omitVAOs ?? new List<int>();
 
             #region RAYCASTING APPROACH
@@ -1101,11 +765,11 @@ namespace RubixCubeSolver.Objects
 
                 else
                 {
+                    UpdateGameObjectsOnlyList();
+
                     /// Draw all GameObjects and information
                     for (int i = 0; i < gameObjectsOnlyList.Count; i++)
                     {
-                        UpdateGameObjectsOnlyList();
-
                         /// Again, since we aren't after a specific object, it makes sense to draw using the index of the game object in the myGameObjects List
                         DrawWithIndex(i, false);
                     }
@@ -1131,58 +795,19 @@ namespace RubixCubeSolver.Objects
             GameObject.DisposeAllClones();
         }
 
-        /*
-        public static Matrix4 RotateInXYAroundPoint(Vector3 centreRelativeToCurrentObjectCentre, float horizontalRotIn, float verticalRotIn, bool switchYForZ, bool switchXForZ, int invertRotation)
+        public static Matrix4 RotateInXYZAroundPoint(Vector3 centreRelativeToCurrentObjectCentre, float XRotIn = 0.0f, float YRotIn = 0.0f, float ZRotIn = 0.0f, float invertXRot = 1.0f, float invertYRot = 1.0f, float invertZRot = 1.0f)
         {
             Matrix4 transform = Matrix4.Identity;
 
-            float horizontalRot = horizontalRotIn;
-            float verticalRot = verticalRotIn;
+            float XRot = XRotIn * invertXRot;
+            float YRot = YRotIn * invertYRot;
+            float ZRot = ZRotIn * invertZRot;
 
-            //horizontalRot *= invertRotation * -1;
-
-            horizontalRot *= invertRotation;
-
-
-            if (switchYForZ)
-            {
-                transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(horizontalRot)) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-verticalRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
-            }
-
-            else if (switchXForZ)
-            {
-                transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(horizontalRot)) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-verticalRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
-            }
-
-            else
-            {
-                transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-horizontalRot)) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-verticalRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
-            }
+            transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-XRot)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-YRot)) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-ZRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
 
             return transform;
         }
-        //*/
 
-        /*
-        public static Matrix4 RotateInXYZAroundPoint(Vector3 centreRelativeToCurrentObjectCentre, float[] anglesIn = null)
-        {
-            float[] angles = anglesIn ?? new float[] { 0.0f, 0.0f, 0.0f };
-
-            Matrix4 transform = Matrix4.Identity * Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre);
-
-            float XRot = angles[0];
-            float YRot = angles[1];
-            float ZRot = angles[2];
-
-            transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-ZRot)) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-XRot)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-YRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
-
-            transform *= Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
-
-            return transform;
-        }
-        //*/
-
-        //*
         public static Matrix4 RotateInXYZAroundPoint(Vector3 centreRelativeToCurrentObjectCentre, float[] anglesIn = null, float[] invertRotIn = null, int[] swapAnglesIn = null)
         {
             float[] angles = anglesIn ?? new float[] { 0.0f, 0.0f, 0.0f };
@@ -1191,12 +816,10 @@ namespace RubixCubeSolver.Objects
 
             Matrix4 transform = Matrix4.Identity * Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre);
 
-            float XRot = angles[swapAngles[0]] * invertRot[swapAngles[0]];
-            float YRot = angles[swapAngles[1]] * invertRot[swapAngles[1]];
-            float ZRot = angles[swapAngles[2]] * invertRot[swapAngles[2]];
+            float XRot = angles[swapAngles[0]] * invertRot[0];
+            float YRot = angles[swapAngles[1]] * invertRot[1];
+            float ZRot = angles[swapAngles[2]] * invertRot[2];
 
-            #region .
-            /*
             /// This wierd construction is to help avoid the problem of gimbal lock
             for (int i = 0; i < 3; i++)
             {
@@ -1215,21 +838,19 @@ namespace RubixCubeSolver.Objects
                         break;
                 }
             }
-            //*/
-            #endregion
 
-            transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-XRot)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-YRot)) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-ZRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
-            //transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-YRot)) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-ZRot)) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-XRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
+            //transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-XRot)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-YRot)) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-ZRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
+            transform *= Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
 
             return transform;
         }
-        //*/
 
         public static void QuitApp()
         {
             //Run any code which I want to, before exitting the application, most likely message box
 
             //OpenTK Exit Function closes windows
+            
         }
 
     }

@@ -49,8 +49,11 @@
   <ItemGroup>
     <Compile Include="Objects\Camera.cs" />
     <Compile Include="Objects\CompositeGameObject.cs" />
+    <Compile Include="Objects\TopPlane.cs" />
+    <Compile Include="Objects\SidePlane.cs" />
     <Compile Include="Objects\Plane.cs" />
     <Compile Include="Objects\CompositeTest.cs" />
+    <Compile Include="Objects\RubiksCubeSlice.cs" />
     <Compile Include="Objects\RubiksCube.cs" />
     <Compile Include="Objects\RubiksCubePiece.cs" />
     <Compile Include="Objects\GameMaster.cs" />
@@ -58,8 +61,6 @@
     <Compile Include="Objects\Cube.cs" />
     <Compile Include="Objects\GameObject.cs" />
     <Compile Include="Objects\Shader.cs" />
-    <Compile Include="Objects\SidePlane.cs" />
-    <Compile Include="Objects\TopPlane.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

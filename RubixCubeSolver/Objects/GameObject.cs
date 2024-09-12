@@ -40,11 +40,11 @@ namespace RubixCubeSolver.Objects
         Vector3 objectPos;
         Vector3 objectCol;
         float objectScale;
-        float[] angles = new float[3];
-        float[] invertRot = new float[] { 1f, 1f, 1f };
-        int[] swapAngles = new int[3] { 0, 1, 2 };
+        bool hide = false;
 
-        Matrix4 myTransform = Matrix4.Identity;
+        float[] angles = new float[3] { 0.0f, 0.0f, 0.0f };
+        float[] invertRot = new float[3] { 1.0f, 1.0f, 1.0f };
+        int[] swapAngles = new int[3] { 0, 1, 2 };
 
         /// Only Information for Other Functions to work properly
 
@@ -58,14 +58,10 @@ namespace RubixCubeSolver.Objects
         float lengthZ = -1.0f;
 
         private string myType;
-        //private bool switchYForZ;
-        //private bool switchXForZ;
 
         /// The GameObject Constructor. Here is where all the information is initialized and set (including default values), upon creation of the object
-        //public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shaderIn, float objectScaleIn = 1.0f, float[] anglesIn = null, Vector3? objectPosIn = null, Vector3? objectColIn = null, bool switchYForZIn = false, bool switchXForZIn = false)
-        public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shaderIn, float objectScaleIn = 1.0f, float[] anglesIn = null, Vector3? objectPosIn = null, Vector3? objectColIn = null)
+        public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shaderIn, float objectScaleIn = 1.0f, Vector3? objectPosIn = null, Vector3? objectColIn = null, float[] anglesIn = null, float[] invertIn = null, int[] swapAnglesIn = null)
         {
-            float[] angles = anglesIn ?? new float[] { 0.0f, 0.0f, 0.0f };
             objectVertices = objectVerticesIn;
             objectIndices = objectIndicesIn;
 
@@ -76,10 +72,12 @@ namespace RubixCubeSolver.Objects
             objectPos = objectPosIn ?? new Vector3(0.0f);               /// (0, 0, 0) is the centre of the world
             objectCol = objectColIn ?? new Vector3(1.0f, 0.3f, 0.31f);  /// R G B  This is a pink color
 
-            //switchYForZ = switchYForZIn;
-            //switchXForZ = switchXForZIn;
+            angles = anglesIn ?? angles;
+            invertRot = invertIn ?? invertRot;
+            swapAngles = swapAnglesIn ?? swapAngles;
 
-            setAngles(angles);
+            setAngles(new float[] { angles[0], angles[1], angles[2] });
+            setInvertRotation(new float[] { invertRot[0], invertRot[1], invertRot[2] });
 
             /// If this object has not been created yet, generate VBO and EBO for GameObject, and store in dictionary, for use.
             if (!count.ContainsKey(this.GetType().ToString()))
@@ -90,7 +88,7 @@ namespace RubixCubeSolver.Objects
             }
 
             /// Setup Object, with thier VAO
-            VAO = SetupVAO(genAndGetVBOHandle(), genAndGetEBOHandle(), shader);
+            VAO = SetupVAO(shader, genAndGetVBOHandle(), genAndGetEBOHandle());
 
             string key = this.GetType().ToString();
 
@@ -182,7 +180,52 @@ namespace RubixCubeSolver.Objects
             }
 
             /// else: The object is not a clone, and a VBO does exist for it, so fetch it from the dictionary
-            VBO = VBOs[key];
+            return VBOs[key];
+            
+        }
+
+        public int genAndUpdateStreamVBO()
+        {
+            if (VBO == -1)
+            {
+                /// Initialize a VBO for this object
+                /// Create Buffer for Object
+                VBO = GL.GenBuffer();
+
+                /// Obtain Handle to Our Buffer
+                GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
+
+                /// Finally, upload the vertices to the buffer.
+                /// Arguments:
+                /// 1) Which buffer the data should be sent to.
+                /// 2) How much data is being sent, in bytes. 
+                /// You can generally set this to the length of your array, multiplied by sizeof(array type).
+                /// 3) The vertices themselves.
+                /// 4) How the buffer will be used, so that OpenGL can write the data to the proper memory space on the GPU.
+                /// 
+                /// There are three different BufferUsageHints for drawing:
+                /// StaticDraw: This buffer will rarely, if ever, update after being initially uploaded.
+                /// 
+                /// DynamicDraw: This buffer will change frequently after being initially uploaded.
+                /// 
+                /// StreamDraw: This buffer will change on every frame.
+                /// 
+                /// Writing to the proper memory space is important! Generally, you'll only want StaticDraw,
+                /// But be sure to use the right one for your use case. 
+                GL.BufferData(BufferTarget.ArrayBuffer, this.getVertices().Length * sizeof(float), this.getVertices(), BufferUsageHint.StreamDraw);
+
+                GL.Finish();
+
+            }
+
+            else
+            {
+                /// Bind Our Buffer using the Handle
+                GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
+
+                /// Finally, upload the vertices to the buffer.
+                GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)0, objectVertices.Length * sizeof(float), objectVertices);
+            }
 
             return VBO;
         }
@@ -224,13 +267,11 @@ namespace RubixCubeSolver.Objects
             return VBO;
         }
         //*/
-        
-        /// Useful with clones
-        void setVBOHandle(int value)
+
+        public void setVBOHandle(int value)
         {
             VBO = value;
         }
-
         public void delVBOHandle()
         {
             string key = this.GetType().ToString();
@@ -279,10 +320,36 @@ namespace RubixCubeSolver.Objects
             }
 
             /// else: The object is not a clone, and a VBO does exist for it, so fetch it from the dictionary
-            EBO = EBOs[key];
+            return EBOs[key];
+
+        }
+
+        public int genAndUpdateStreamEBO()
+        {
+            if (EBO == -1)
+            {
+                /// Initialize a EBO for this object
+                EBO = GL.GenBuffer();
+
+                /// Obtain Handle to Our Buffer
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, EBO);
+
+                /// Finally, upload the vertices to the buffer.
+                GL.BufferData(BufferTarget.ElementArrayBuffer, this.getIndices().Length * sizeof(uint), this.getIndices(), BufferUsageHint.StreamDraw);
+
+                GL.Finish();
+            }
+
+            else
+            {
+                /// Bind Our Buffer using the Handle
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, EBO);
+
+                /// Finally, upload the indices to the buffer.
+                GL.BufferSubData(BufferTarget.ElementArrayBuffer, (IntPtr)0, objectIndices.Length * sizeof(uint), objectIndices);
+            }
 
             return EBO;
-
         }
 
         /*
@@ -306,7 +373,7 @@ namespace RubixCubeSolver.Objects
         }
         //*/
 
-        void setEBOHandle(int value)
+        public void setEBOHandle(int value)
         {
             EBO = value;
         }
@@ -332,6 +399,14 @@ namespace RubixCubeSolver.Objects
             //GL.BindBuffer(BufferTarget.ElementArrayBuffer, EBO);
 
             return VAO;
+        }
+
+        public void SetupObject(out int VBOHandle, out int EBOHandle)
+        {
+            VBOHandle = genAndUpdateStreamVBO();
+            EBOHandle = genAndUpdateStreamEBO();
+
+            VAO = SetupVAO(shader, VBOHandle, EBOHandle);
         }
 
         public void genAndOutLongestXYZ(out float XDistance, out float YDistance, out float ZDistance)
@@ -473,7 +548,31 @@ namespace RubixCubeSolver.Objects
         }
         public void setAngles(float XAngle, float YAngle, float ZAngle)
         {
-            setAngles(new float[3] { XAngle, YAngle, ZAngle });
+            setAngles(new float[3] { XAngle, YAngle, ZAngle});
+        }
+
+        public float[] getInvertRotation()
+        {
+            return invertRot;
+        }
+        public void setInvertRotation(float[] invertIn)
+        {
+            if (invertIn.Length != 3)
+            {
+                throw new Exception("Incorrect data given for angles");
+            }
+
+            /// No value can be above 360 degrees
+            /// This however gives these angles a range between -360 and 360
+            for (int i = 0; i < 3; i++)
+            {
+                invertRot[i] = MathHelper.Clamp(invertIn[i], -1, 1);
+            }
+
+        }
+        public void setInvertRotation(float invertX, float invertY, float invertZ)
+        {
+            setInvertRotation(new float[3] { invertX, invertY, invertZ });
         }
 
         public int[] getSwapAngles()
@@ -503,52 +602,25 @@ namespace RubixCubeSolver.Objects
             swapAngles[index1] = swapAngles[index2];
             swapAngles[index2] = temp;
         }
+        public void ShiftAngles(int number)
+        {
+            int[] shiftedAngles = new int[3];
 
-        public float[] getInvertRotation()
-        {
-            return invertRot;
-        }
-        public void setInvertRotation(float[] invertIn)
-        {
-            if (invertIn.Length != 3)
+            for (int i = 0; i < shiftedAngles.Length; i++)
             {
-                throw new Exception("Incorrect data given for angles");
+                shiftedAngles[i] = swapAngles[(i + number) % 3];
+            }
+        }
+        public void ReorderAngles(int[] order)
+        {
+            int[] reorderedAngles = new int[3];
+
+            for (int i = 0; i < reorderedAngles.Length; i++)
+            {
+                reorderedAngles[i] = swapAngles[order[i]];
             }
 
-            /// No value can be above 360 degrees
-            /// This however gives these angles a range between -360 and 360
-            for (int i = 0; i < 3; i++)
-            {
-                invertRot[i] = MathHelper.Clamp(invertIn[i], -1, 1);
-            }
-
-        }
-        public void setInvertRotation(float invertX, float invertY, float invertZ)
-        {
-            setInvertRotation(new float[3] { invertX, invertY, invertZ });
-        }
-
-        /*
-        public void setAngles(float horizontalAngleIn = 0.0f, float verticalAngleIn = 0.0f)
-        {
-            /// Neither value can be above 360 degrees
-            /// This however gives these angles a range between -360 and 360
-            horizontalAngleIn %= 360;
-            verticalAngleIn %= 360;
-
-            angles[0] = horizontalAngleIn;
-            angles[1] = verticalAngleIn;
-            
-        }
-        //*/
-
-        public Matrix4 getTransform()
-        {
-            return myTransform;
-        }
-        public void setTransform(Matrix4 value)
-        {
-            myTransform = value;
+            swapAngles = reorderedAngles;
         }
 
         public string getMyType()
@@ -560,34 +632,14 @@ namespace RubixCubeSolver.Objects
             myType = value;
         }
 
-        /*
-        public int getInvertRotation()
+        public bool getHide()
         {
-            return invertRotation;
+            return hide;
         }
-        public void setInvertRotation(int value)
+        public void setHide(bool value)
         {
-            invertRotation = value;
+            hide = value;
         }
-
-        public bool getSwitchYForZ()
-        {
-            return switchYForZ;
-        }
-        public void setSwitchYForZ(bool value)
-        {
-            switchYForZ = value;
-        }
-
-        public bool getSwitchXForZ()
-        {
-            return switchXForZ;
-        }
-        public void setSwitchXForZ(bool value)
-        {
-            switchXForZ = value;
-        }
-        //*/
 
         public void DisposeThisGameObject(bool isThisObjectPartOfComposite = false)
         {
@@ -642,7 +694,7 @@ namespace RubixCubeSolver.Objects
         {
             if (perfectClone)
             {
-                return new GameObject(objectVertices, objectIndices, shader, objectScale, angles, objectPos, objectCol);
+                return new GameObject(objectVertices, objectIndices, shader, objectScale, objectPos, objectCol, angles, invertRot, swapAngles);
             }
 
             /// if false, then a very special semiclone is created.
@@ -665,19 +717,17 @@ namespace RubixCubeSolver.Objects
             if (VAO != -1)
             {
                 clonedGameObject.VAO = VAO;
-            
             }
+
             /// Set the position, scale and color to the same as this object
             clonedGameObject.setPosition(objectPos);
             clonedGameObject.setScale(objectScale);
             clonedGameObject.setColor(objectCol);
 
             /// Angle the object correctly
-            clonedGameObject.setAngles(angles);
-            //clonedGameObject.setSwitchYForZ(switchYForZ);
-            clonedGameObject.setInvertRotation(invertRot);
-
-            clonedGameObject.setTransform(myTransform);
+            clonedGameObject.setSwapAngles(swapAngles[0], swapAngles[1], swapAngles[2]);
+            clonedGameObject.setAngles(angles[0], angles[1], angles[2]);
+            clonedGameObject.setInvertRotation(invertRot[0], invertRot[1], invertRot[2]);
 
             #region RACASTING APPROACH (Detection Box)
             //genAndOutLongestXYZ(out lengthX, out lengthY, out lengthZ);
@@ -708,7 +758,7 @@ namespace RubixCubeSolver.Objects
         /// When Binding VAOs, the relavant VBO, EBO and Shader informaation is all gathered is obtained.
         /// Shader defaults to the lighting shader
         ///</summary>
-        public static int SetupVAO(int VBO, int EBO, Shader objectShader)
+        public static int SetupVAO(Shader objectShader, int VBO, int EBO)
         {
             /// Both checks below make sure an error occurs if the object VBO and EBO aren't generated/obtained properly
             /// -1 is the value the VBO and EBO Handles hold when they don't exist
@@ -769,10 +819,63 @@ namespace RubixCubeSolver.Objects
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, EBO);
 
-            GL.Finish();
+            //GL.Finish();
 
             return HandleVAO;
         }
+        public Matrix4 setRotatedAndPositionedVertices(bool isPartOfComposite = false)
+        {
+            if (hide)
+            {
+                return Matrix4.Zero;
+            }
+
+            /// Transform each vertex, by transform, so the object is:
+            ///     * Rotated
+            ///     * Scaled
+            ///     * Positioned
+            Matrix4 transform = GameMaster.RotateInXYZAroundPoint(new Vector3(0.0f), angles) * Matrix4.CreateScale(objectScale) * Matrix4.CreateTranslation(objectPos);
+
+            if (isPartOfComposite)
+            {
+                return GameMaster.RotateInXYZAroundPoint(new Vector3(0.0f), angles) * Matrix4.CreateScale(objectScale) * Matrix4.CreateTranslation(objectPos);
+            }
+
+            float[] newVertices = new float[objectVertices.Length];
+
+            /// Repeat for every vertex available in the GameObject
+            for (int k = 0; k < objectVertices.Length / 3; k++)
+            {
+                /// For each Vertex
+                /*
+                Vector4 theVertex = new Vector4();
+
+                /// Setup theVertex (basically, each vertex's X, Y, Z and 1.0f (so multiplication with Matrix4 is possible. this last value will be omitted in the final vertex)
+                
+                for (int j = 0; j < 3; j++)
+                {
+                    theVertex[j] = objectVertices[k * 3 + j];
+                }
+                theVertex[3] = 1.0f;
+                //*/
+
+                Vector4 theVertex = new Vector4(objectVertices[k * 3], objectVertices[k * 3 + 1], objectVertices[k * 3 + 2], 1.0f);
+
+
+                /// Transform the vertex
+                Vector4 transformedVertex = transform * theVertex;
+
+                /// Add the vertex to the array of vertices
+                for (int j = 0; j < 3; j++)
+                {
+                    newVertices[k * 3 + j] = transformedVertex[j];
+                }
+            }
+
+            setVertices(newVertices);
+
+            return Matrix4.Identity;
+        } 
 
         /// ADDITIONAL METHODS (and probably only for debugging)
         /// <summary>

@@ -32,7 +32,7 @@ namespace RubixCubeSolver.Objects
         /// The default color is red
         private static Vector3 myColor = new Vector3(1.0f, 0.0f, 0.0f); /// R G B
 
-        public TopPlane(Shader shader, float scale = 1.0f, float[] angles = null, Vector3? position = null, Vector3? color = null) : base(vertices, indices, shader, scale, angles, position, color)
+        public TopPlane(Shader shader, float scale = 1.0f, Vector3? position = null, Vector3? color = null, float[] angles = null, float[] invertRot = null, int[] swapAngles = null) : base(vertices, indices, shader, scale, position, color, angles, invertRot, swapAngles)
         {
             /// Set to the color specified, unless it's null, in which case the default color is red
             setColor(color ?? myColor);
