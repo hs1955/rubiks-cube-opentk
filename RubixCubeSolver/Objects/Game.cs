@@ -90,7 +90,7 @@ namespace RubixCubeSolver.Objects
 
             /// Test 3
             AddGameObjects(new RubiksCube(lightingShader, scale: 0.25f, position: new Vector3(0.0f)));
-            AddGameObjects(new RubiksCubeSlice(lightingShader, scale: 0.25f, position: new Vector3(-1.0f, 0.25f, 0.0f)));
+            //AddGameObjects(new RubiksCubeSlice(lightingShader, scale: 0.25f, position: new Vector3(-1.0f, 0.25f, 0.0f)));
 
             base.OnLoad(e);
         }
@@ -115,6 +115,9 @@ namespace RubixCubeSolver.Objects
 
         bool[] animationDone = new bool[] { true, true };
         System.Collections.Generic.List<int> omitVAOs = new System.Collections.Generic.List<int>();
+
+        int sliceToAnimate = (int)RubiksCube.Slices.Left;
+
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             /// Check to see if the window is focused
@@ -182,14 +185,12 @@ namespace RubixCubeSolver.Objects
 
                     _prevTime = frameTime;
                 }
-
                 if (input.IsKeyDown(Key.Number2) && (frameTime > _prevTime + 10))
                 {
                     AddGameObjects(new Plane(lightingShader, scale: rnd.Next(5, 15) / 10f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble())), new float[] { Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f }));
 
                     _prevTime = frameTime;
                 }
-
                 if (input.IsKeyDown(Key.Number0) && (frameTime > _prevTime + 10))
                 {
                     DisposeAllGameObjects();
@@ -201,16 +202,15 @@ namespace RubixCubeSolver.Objects
                 {
                     RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
 
-                    animationDone[0] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Bottom, -1);
+                    animationDone[0] = rubiksCube.RotateSlice(sliceToAnimate, -1);
 
                     _prevTime = frameTime;
                 }
-
                 if (input.IsKeyDown(Key.P) && (frameTime > _prevTime + 10) || !animationDone[1])
                 {
                     RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
 
-                    animationDone[1] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Bottom, 1);
+                    animationDone[1] = rubiksCube.RotateSlice(sliceToAnimate, 1);
 
                     _prevTime = frameTime;
                 }

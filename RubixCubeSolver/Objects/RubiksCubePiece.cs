@@ -134,5 +134,27 @@ namespace RubixCubeSolver.Objects
 
             return myColor;
         }
+
+        public void RearrangePieceColors(bool swapFrontWithRightTiles = false, bool swapFrontWithTopTiles = false)
+        {
+            int[] theColors;
+            theColors = (int[])colors.Clone();
+
+            if (swapFrontWithRightTiles)
+            {
+                int temp = theColors[0];
+                theColors[0] = theColors[1];
+                theColors[1] = temp;
+            }
+
+            if (swapFrontWithTopTiles)
+            {
+                int temp = theColors[0];
+                theColors[0] = theColors[theColors.Length - 1];
+                theColors[theColors.Length - 1] = temp;
+            }
+
+            UpdateColors(theColors);
+        }
     }
 }

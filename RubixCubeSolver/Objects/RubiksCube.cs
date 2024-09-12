@@ -1,6 +1,5 @@
 ﻿using OpenTK;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace RubixCubeSolver.Objects
 {
@@ -12,7 +11,10 @@ namespace RubixCubeSolver.Objects
         {
             Top = 1,
             Bottom,
-            
+            Right,
+            Left,
+            Front,
+            Back
         }
 
         int[] colors = new int[54];
@@ -24,67 +26,94 @@ namespace RubixCubeSolver.Objects
                 #region Rubiks Cube Pieces
 
                 #region White Face
-                
+
+                /// Index: 0
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Green, (int)RubiksCubePiece.RubiksCubeColors.Red, (int)RubiksCubePiece.RubiksCubeColors.White, 1.0f, angles: new float[] { 0.0f, -90.0f, 0.0f }, position: new Vector3(-1.0f, 1.0f, 1.0f)),
                 
+                /// Index: 1
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Red, 0, (int)RubiksCubePiece.RubiksCubeColors.White, 1.0f, angles: new float[] { 0.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, 1.0f, 1.0f)),
 
+                /// Index: 2
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Red, (int)RubiksCubePiece.RubiksCubeColors.Blue, (int)RubiksCubePiece.RubiksCubeColors.White, 1.0f, angles: new float[] { 0.0f, 0.0f, 0.0f }, position: new Vector3(1.0f, 1.0f, 1.0f)),
 
+                /// Index: 3
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Green, 0, (int)RubiksCubePiece.RubiksCubeColors.White, 1.0f, angles: new float[] { 0.0f, -90.0f, 0.0f }, position: new Vector3(-1.0f, 1.0f, 0.0f)),
                 
+                /// Index: 4
                 new RubiksCubePiece(shader, 0, 0, (int)RubiksCubePiece.RubiksCubeColors.White, 1.0f, angles: new float[] { 0.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, 1.0f, 0.0f)),
 
+                /// Index: 5
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Blue, 0, (int)RubiksCubePiece.RubiksCubeColors.White, 1.0f, angles: new float[] { 0.0f, 90.0f, 0.0f }, position: new Vector3(1.0f, 1.0f, 0.0f)),
 
+                /// Index: 6
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Orange, (int)RubiksCubePiece.RubiksCubeColors.Green, (int)RubiksCubePiece.RubiksCubeColors.White, 1.0f, angles: new float[] { 0.0f, 180.0f, 0.0f }, position: new Vector3(-1.0f, 1.0f, -1.0f)),
 
+                /// Index: 7
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Orange, 0, (int)RubiksCubePiece.RubiksCubeColors.White, 1.0f, angles: new float[] { 0.0f, 180.0f, 0.0f }, position: new Vector3(0.0f, 1.0f, -1.0f)),
 
+                /// Index: 8
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Blue, (int)RubiksCubePiece.RubiksCubeColors.Orange, (int)RubiksCubePiece.RubiksCubeColors.White, 1.0f, angles: new float[] { 0.0f, 90.0f, 0.0f }, position: new Vector3(1.0f, 1.0f, -1.0f)),
                 
                 #endregion
 
                 #region Yellow Face
 
-                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Red, (int)RubiksCubePiece.RubiksCubeColors.Green, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, position: new Vector3(-1.0f, -1.0f, 1.0f), angles: new float[] { 180.0f, 180.0f, 0.0f }),
+                /// Index: 9
+                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Orange, (int)RubiksCubePiece.RubiksCubeColors.Blue, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 0.0f, 0.0f }, position: new Vector3(1.0f, -1.0f, -1.0f)),
 
+                /// Index: 10
+                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Orange, 0, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, -1.0f, -1.0f)),
+
+                /// Index: 11
+                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Green, (int)RubiksCubePiece.RubiksCubeColors.Orange, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, -90.0f, 0.0f }, position: new Vector3(-1.0f, -1.0f, -1.0f)),
+
+                /// Index: 12
+                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Blue, 0, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 90.0f, 0.0f }, position: new Vector3(1.0f, -1.0f, 0.0f)),
+
+                /// Index: 13
+                new RubiksCubePiece(shader, 0, 0, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, -1.0f, 0.0f)),
+
+                /// Index: 14
+                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Green, 0, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, -90.0f, 0.0f }, position: new Vector3(-1.0f, -1.0f, 0.0f)),
+
+                /// Index: 15
+                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Blue, (int)RubiksCubePiece.RubiksCubeColors.Red, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 90.0f, 0.0f }, position: new Vector3(1.0f, -1.0f, 1.0f)),
+
+                /// Index: 16
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Red, 0, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 180.0f, 0.0f }, position: new Vector3(0.0f, -1.0f, 1.0f)),
 
-                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Blue, (int)RubiksCubePiece.RubiksCubeColors.Red, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 90.0f, 0.0f }, position: new Vector3(1.0f, -1.0f, 1.0f)),
-                
-                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Green, 0, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, -90.0f, 0.0f }, position: new Vector3(-1.0f, -1.0f, 0.0f)),
-                
-                new RubiksCubePiece(shader, 0, 0, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, -1.0f, 0.0f)),
-                
-                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Blue, 0, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 90.0f, 0.0f }, position: new Vector3(1.0f, -1.0f, 0.0f)),
-                
-                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Green, (int)RubiksCubePiece.RubiksCubeColors.Orange, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, -90.0f, 0.0f }, position: new Vector3(-1.0f, -1.0f, -1.0f)),
-                
-                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Orange, 0, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, -1.0f, -1.0f)),
-                
-                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Orange, (int)RubiksCubePiece.RubiksCubeColors.Blue, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, angles: new float[] { 180.0f, 0.0f, 0.0f }, position: new Vector3(1.0f, -1.0f, -1.0f)),
+                /// Index: 17
+                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Red, (int)RubiksCubePiece.RubiksCubeColors.Green, (int)RubiksCubePiece.RubiksCubeColors.Yellow, 1.0f, position: new Vector3(-1.0f, -1.0f, 1.0f), angles: new float[] { 180.0f, 180.0f, 0.0f }),
 
                 #endregion
 
                 #region Pieces inbetween white and yellow faces
                 
-                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Green, (int)RubiksCubePiece.RubiksCubeColors.Red, 0, 1.0f, angles: new float[] { 0.0f, -90.0f, 0.0f }, position: new Vector3(-1.0f, 0.0f, 1.0f)),
+                /// Index: 18
+                //new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Green, (int)RubiksCubePiece.RubiksCubeColors.Red, 0, 1.0f, angles: new float[] { 0.0f, -90.0f, 0.0f }, position: new Vector3(-1.0f, 0.0f, 1.0f)),
+                new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Red, (int)RubiksCubePiece.RubiksCubeColors.Green, 0, 1.0f, angles: new float[] { 0.0f, 0.0f, 180.0f }, position: new Vector3(-1.0f, 0.0f, 1.0f)),
 
+                /// Index: 19
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Red, 0, 0, 1.0f, angles: new float[] { 0.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, 0.0f, 1.0f)),
 
+                /// Index: 20
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Red, (int)RubiksCubePiece.RubiksCubeColors.Blue, 0, 1.0f, angles: new float[] { 0.0f, 0.0f, 0.0f }, position: new Vector3(1.0f, 0.0f, 1.0f)),
                 
+                /// Index: 21
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Green, 0, 0, 1.0f, angles: new float[] { 0.0f, -90.0f, 0.0f }, position: new Vector3(-1.0f, 0.0f, 0.0f)),
 
                 //new RubiksCubePiece(shader, 0, 0, 0, 1.0f, angles: new float[] { 0.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, 0.0f, 0.0f)),
 
+                /// Index: 22
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Blue, 0, 0, 1.0f, angles: new float[] { 0.0f, 90.0f, 0.0f }, position: new Vector3(1.0f, 0.0f, 0.0f)),
 
+                /// Index: 23
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Orange, (int)RubiksCubePiece.RubiksCubeColors.Green, 0, 1.0f, angles: new float[] { 0.0f, 180.0f, 0.0f }, position: new Vector3(-1.0f, 0.0f, -1.0f)),
 
+                /// Index: 24
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Orange, 0, 0, 1.0f, angles: new float[] { 180.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, 0.0f, -1.0f)),
 
+                /// Index: 25
                 new RubiksCubePiece(shader, (int)RubiksCubePiece.RubiksCubeColors.Orange, (int)RubiksCubePiece.RubiksCubeColors.Blue, 0, 1.0f, angles: new float[] { 180.0f, 0.0f, 0.0f }, position: new Vector3(1.0f, 0.0f, -1.0f)),
 
                 #endregion
@@ -95,19 +124,26 @@ namespace RubixCubeSolver.Objects
                 /// These are the slices that are required for animating the rotations.
                 /// These start of invisible
                 
-                /// 27th Object
+                //*
+                /// Index: 26
                 new RubiksCubeSlice(shader, 1.0f, angles: new float[] { 0.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, 1.0f, 0.0f)),
                 
+                /// Index: 27
                 new RubiksCubeSlice(shader, 1.0f, angles: new float[] { 180.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, -1.0f, 0.0f)),
                 
-                new RubiksCubeSlice(shader, 1.0f, angles: new float[] { 90.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, 0.0f, 1.0f)),
-                
-                new RubiksCubeSlice(shader, 1.0f, angles: new float[] { -90.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, 0.0f, -1.0f)),
-                
+                /// Index: 28
                 new RubiksCubeSlice(shader, 1.0f, angles: new float[] { 0.0f, 0.0f, -90.0f }, position: new Vector3(1.0f, 0.0f, 0.0f)),
 
-                new RubiksCubeSlice(shader, 1.0f, angles: new float[] { 0.0f, 0.0f, 90.0f }, position: new Vector3(-1.0f, 0.0f, 0.0f))
+                /// Index: 29
+                new RubiksCubeSlice(shader, 1.0f, angles: new float[] { 0.0f, 0.0f, 90.0f }, position: new Vector3(-1.0f, 0.0f, 0.0f)),
+
+                /// Index: 30
+                new RubiksCubeSlice(shader, 1.0f, angles: new float[] { 90.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, 0.0f, 1.0f)),
+                
+                /// Index: 31
+                new RubiksCubeSlice(shader, 1.0f, angles: new float[] { -90.0f, 0.0f, 0.0f }, position: new Vector3(0.0f, 0.0f, -1.0f))
                 //*/
+
                 #endregion
 
             };
@@ -151,7 +187,9 @@ namespace RubixCubeSolver.Objects
             {
                 RubiksCubePiece rubiksCubePiece = (RubiksCubePiece)theObjects[index];
 
-                theColors.AddRange(rubiksCubePiece.getColors());
+                int[] itsColors = rubiksCubePiece.getColors();
+
+                theColors.AddRange(itsColors);
             }
 
             int[] piecesColors = theColors.ToArray();
@@ -195,15 +233,15 @@ namespace RubixCubeSolver.Objects
         int framesPassed;
         float[] storedAngles;
         bool animationFirstFrame = true;
-        public bool RotateSlice(int sliceNumber, int direction, float speed = 0.2f)
+        public bool RotateSlice(int sliceNumber, int direction, float speed = 2.0f)
         {
             if (!(direction == 1 || direction == -1))
             {
                 throw new System.Exception($"Direction must be 1 or -1.\nGiven Direction: {direction}");
             }
+            speed = MathHelper.Clamp(speed, 0.00001f, 90.0f);
 
             RubiksCubeSlice slice;
-            float[] angleInfo = new float[3];
             int[] slicePieces = new int[9];
 
             switch (sliceNumber)
@@ -242,37 +280,57 @@ namespace RubixCubeSolver.Objects
                 animationFirstFrame = false;
             }
 
+            /// A measure of how many frames have passed since the beginning of the rotation
             framesPassed = Game.frameTime - prevFrameTime;
             
+            /// The amount to rotate the slice by
             float rotationAmount = framesPassed * speed * direction;
-            MathHelper.Clamp(rotationAmount, -90.0f, 90.0f);
+            rotationAmount = MathHelper.Clamp(rotationAmount, -90.0f, 90.0f);
 
-            if (framesPassed == 0 || System.Math.Abs(rotationAmount) == 90)
+            /// Required for some slices for correct colors and rotation
+            int directionCorrection = 1;
+            bool leftRightSide = false;
+            bool frontBackSide = false;
+
+            if (framesPassed == 0 || System.Math.Abs(rotationAmount) <= 90)
             {
                 switch (sliceNumber)
                 {
                     case 1:
                         slicePieces = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+                        //leftRightSide = true;
+                        //directionCorrection = -1;
                         break;
 
                     case 2:
-                        slicePieces = new int[] { 9, 10, 11, 12, 13, 14, 15, 16, 17 };
+                        //slicePieces = new int[] { 9, 10, 11, 12, 13, 14, 15, 16, 17 };
+                        slicePieces = new int[] { 11, 10, 9, 14, 13, 12, 17, 16, 15 };
                         break;
 
                     case 3:
-
+                        //slicePieces = new int[] { 2, 5, 8, 20, 22, 25, 9, 12, 15 };
+                        slicePieces = new int[] { 2, 20, 15, 5, 22, 12, 8, 25, 9 };
+                        leftRightSide = true;
                         break;
-
+                        
                     case 4:
+                        //slicePieces = new int[] { 0, 18, 17, 3, 21, 14, 6, 23, 11 };
+                        slicePieces = new int[] { 17, 18, 0, 14, 21, 3, 11, 23, 6 };
+                        leftRightSide = true;
+                        directionCorrection = -1;
 
+                        //slicePieces = new int[] { 6, 23, 11, 3, 21, 14, 0, 18, 17, };
                         break;
 
                     case 5:
-
+                        //slicePieces = new int[] { 0, 1, 2, 18, 19, 20, 17, 16, 15 };
+                        slicePieces = new int[] { 17, 16, 15, 18, 19, 20, 0, 1, 2 };
+                        frontBackSide = true;
                         break;
 
                     case 6:
-
+                        slicePieces = new int[] { 6, 7, 8, 23, 24, 25, 11, 10, 9 };
+                        frontBackSide = true;
                         break;
 
                     default:
@@ -286,48 +344,25 @@ namespace RubixCubeSolver.Objects
                 int[] newColors = getColorsOfPieces(slicePieces);
 
                 /// Update slice accordingly
-                slice.UpdateColors(newColors);
+                slice.UpdateColors(newColors, leftRightSide, frontBackSide);
 
                 slice.setHide(false);
 
-                switch (sliceNumber)
-                {
-                    case 1:
-                        slicePieces = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
-                        break;
-
-                    case 2:
-                        slicePieces = new int[] { 9, 10, 11, 12, 13, 14, 15, 16, 17 };
-                        break;
-
-                    case 3:
-
-                        break;
-
-                    case 4:
-
-                        break;
-
-                    case 5:
-
-                        break;
-
-                    case 6:
-
-                        break;
-
-                    default:
-                        throw new System.Exception($"Slice Number must be inbetween 1-6\nGiven Slice Number: {sliceNumber}");
-                }
-
                 ObjectsHide(slicePieces, true);
-                angleInfo = slice.getAngles();
-                storedAngles = (float[])angleInfo.Clone();
+                storedAngles = (float[])slice.getAngles().Clone();
             }
 
             if (System.Math.Abs(rotationAmount) < 90)
             {
-                slice.setAngles(new float[] { storedAngles[0] + angleInfo[0], storedAngles[1] + rotationAmount, storedAngles[2] + angleInfo[2] });
+                if (leftRightSide)
+                {
+                    slice.setAngles(new float[] { storedAngles[0] + rotationAmount, storedAngles[1], storedAngles[2] });
+                }
+
+                else
+                {
+                    slice.setAngles(new float[] { storedAngles[0], storedAngles[1] + rotationAmount, storedAngles[2] });
+                }
 
                 /// Animation NOT Complete
                 return false;
@@ -335,17 +370,21 @@ namespace RubixCubeSolver.Objects
 
             else
             {
-                ResetSlices();
-              
+                /// Reset the slices and cube
+                framesPassed = 0;
+
+                /// For next time the function is called
+                animationFirstFrame = true;
+
                 int[] newOrderOfPieces = new int[9];
 
                 /// Rotate Pieces by 90 or -90 degrees (by changing their positions in the matrix)
-                if (direction == 1)
+                if (direction * directionCorrection == 1)
                 {
                     newOrderOfPieces = new int[] { 6, 3, 0, 7, 4, 1, 8, 5, 2 };
                 }
                 
-                else if (direction == -1)
+                else if (direction * directionCorrection == -1)
                 {
                     newOrderOfPieces = new int[] { 2, 5, 8, 1, 4, 7, 0, 3, 6 };
                 }
@@ -364,55 +403,65 @@ namespace RubixCubeSolver.Objects
                     newCubePieces[slicePieces[i]] = slicePieces[newOrderOfPieces[i]];
                 }
 
+                if (leftRightSide)
+                {
+                    //RearrangePiecesColors(new int[] { slicePieces[0], slicePieces[1], slicePieces[2], slicePieces[3], slicePieces[5], slicePieces[6], slicePieces[7], slicePieces[8] }, false, true);
+
+                    RearrangePiecesColors(new int[] { slicePieces[1], slicePieces[3], slicePieces[5], slicePieces[7] }, false, true);
+                    RearrangePiecesColors(new int[] { slicePieces[0], slicePieces[8] }, false, true);
+                    RearrangePiecesColors(new int[] { slicePieces[0], slicePieces[2], slicePieces[6], slicePieces[8] }, true, false);
+                    RearrangePiecesColors(new int[] { slicePieces[2], slicePieces[6] }, false, true);
+                }
+
+                if (frontBackSide)
+                {
+                    RearrangePiecesColors(new int[] { slicePieces[2], slicePieces[6] }, false, true);
+                    RearrangePiecesColors(new int[] { slicePieces[0], slicePieces[2], slicePieces[6], slicePieces[8] }, true, false);
+                    RearrangePiecesColors(new int[] { slicePieces[0], slicePieces[8] }, false, true);
+                }
+
                 /// Update Colors
                 UpdateColors(getColorsOfPieces(newCubePieces));
 
                 /// Show hidden objects again
-                switch (sliceNumber)
-                {
-                    case 1:
-                        ObjectsHide(new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 }, false);
-                        break;
-
-                    case 2:
-                        ObjectsHide(new int[] { 9, 10, 11, 12, 13, 14, 15, 16, 17 }, false);
-                        break;
-
-                    case 3:
-
-                        break;
-
-                    case 4:
-
-                        break;
-
-                    case 5:
-
-                        break;
-
-                    case 6:
-
-                        break;
-
-                    default:
-                        throw new System.Exception($"Slice Number must be inbetween 1-6\nGiven Slice Number: {sliceNumber}");
-                }
+                ObjectsHide(slicePieces, false);
 
                 slice.setHide(true);
-                slice.setAngles(new float[] { angleInfo[0], storedAngles[1], angleInfo[2] });
-                
-                /// For next time the function is called
-                animationFirstFrame = true;
+                slice.setAngles(new float[] { storedAngles[0], storedAngles[1], storedAngles[2] });
 
                 /// Animation Complete
                 return true;
             }
         }
-        public void ResetSlices()
-        {
-            framesPassed = 0;
-        }
 
+        void RearrangePiecesColors(int[] pieceIndexes, bool swapFrontWithRightTiles = false, bool swapFrontWithTopTiles = false)
+        {
+            foreach (int index in pieceIndexes)
+            {
+                RearrangePieceColors(index, swapFrontWithRightTiles, swapFrontWithTopTiles);
+            }
+        }
+        void RearrangePieceColors(int pieceIndex, bool swapFrontWithRightTiles = false, bool swapFrontWithTopTiles = false)
+        {
+            int[] theColors;
+            theColors = (int[])((RubiksCubePiece)theObjects[pieceIndex]).getColors().Clone();
+
+            if (swapFrontWithRightTiles)
+            {
+                int temp = theColors[0];
+                theColors[0] = theColors[1];
+                theColors[1] = temp;
+            }
+
+            if (swapFrontWithTopTiles)
+            {
+                int temp = theColors[0];
+                theColors[0] = theColors[theColors.Length - 1];
+                theColors[theColors.Length - 1] = temp;
+            }
+
+            ((RubiksCubePiece)theObjects[pieceIndex]).UpdateColors(theColors);
+        }
 
     }
 }

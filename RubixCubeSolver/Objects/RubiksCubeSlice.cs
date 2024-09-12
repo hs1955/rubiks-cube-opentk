@@ -1,5 +1,6 @@
 ﻿using OpenTK;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RubixCubeSolver.Objects
 {
@@ -58,7 +59,7 @@ namespace RubixCubeSolver.Objects
         /// <summary>
         /// Updates the colors, changing the colors of the tiles
         /// </summary>
-        public void UpdateColors(int[] colors)
+        public void UpdateColors(int[] colors, bool leftRightSide = false, bool frontBackSide = false)
         {
             //*
             if (colors.Length != 21)
@@ -83,7 +84,59 @@ namespace RubixCubeSolver.Objects
                 offset += theColors.Length;
 
             }
+
+            if (leftRightSide)
+            {
+                //*
+                RearrangePiecesColors(new int[] { 3, 5 }, false, true);
+                RearrangePiecesColors(new int[] { 0, 8 }, true, true);
+
+                RearrangePiecesColors(new int[] { 2, 6 }, false, true);
+                RearrangePiecesColors(new int[] { 2, 6 }, true, false);
+                //*/
+            }
+
+            else if (frontBackSide)
+            {
+                RearrangePiecesColors(new int[] { 1, 3, 5, 7 }, false, true);
+
+                RearrangePiecesColors(new int[] { 2, 6 }, true, true);
+
+                RearrangePiecesColors(new int[] { 0, 8 }, false, true);
+                RearrangePiecesColors(new int[] { 0, 8 }, true, false);
+            }
+
+        }
+
+        void RearrangePiecesColors(int[] pieceIndexes, bool swapFrontWithRightTiles = false, bool swapFrontWithTopTiles = false)
+        {
+            foreach (int index in pieceIndexes)
+            {
+                RearrangePieceColors(index, swapFrontWithRightTiles, swapFrontWithTopTiles);
+            }
+        }
+        void RearrangePieceColors(int pieceIndex, bool swapFrontWithRightTiles = false, bool swapFrontWithTopTiles = false)
+        {
+            int[] theColors;
+            theColors = (int[])((RubiksCubePiece)theObjects[pieceIndex]).getColors().Clone();
+
+            if (swapFrontWithRightTiles)
+            {
+                int temp = theColors[0];
+                theColors[0] = theColors[1];
+                theColors[1] = temp;
+            }
+
+            if (swapFrontWithTopTiles)
+            {
+                int temp = theColors[0];
+                theColors[0] = theColors[theColors.Length - 1];
+                theColors[theColors.Length - 1] = temp;
+            }
+
+            ((RubiksCubePiece)theObjects[pieceIndex]).UpdateColors(theColors);
         }
 
     }
+
 }
