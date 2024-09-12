@@ -13,11 +13,20 @@ namespace RubixCubeSolver.Objects
 
         public enum RubiksCubeColors
         {
+            /*
             White = 1,
             Red,
             Blue,
             Orange,
             Green,
+            Yellow
+            //*/
+
+            White = 1,
+            Red,
+            Green,
+            Orange,
+            Blue,
             Yellow
         }
 
@@ -112,7 +121,7 @@ namespace RubixCubeSolver.Objects
                     break;
 
                 case 3:
-                    myColor = new Vector3(0.0f, 0.0f, 0.9f); /// Blue
+                    myColor = new Vector3(0.0f, 0.51f, 0.0f); /// Green
                     break;
 
                 case 4:
@@ -120,7 +129,7 @@ namespace RubixCubeSolver.Objects
                     break;
 
                 case 5:
-                    myColor = new Vector3(0.0f, 0.51f, 0.0f); /// Green
+                    myColor = new Vector3(0.0f, 0.0f, 0.9f); /// Blue
                     break;
 
                 case 6:

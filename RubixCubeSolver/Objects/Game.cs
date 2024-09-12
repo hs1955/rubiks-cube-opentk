@@ -14,7 +14,7 @@ namespace RubixCubeSolver.Objects
         ///------PROPERTIES
         #region Declaration of Essential Variables and Objects
 
-        Random rnd = new Random();
+        public static Random rnd = new Random();
 
         /// Our Shader
         private string _shaderFilePath = Path.GetFullPath("OpenGL_Shaders/");
@@ -113,11 +113,9 @@ namespace RubixCubeSolver.Objects
             base.OnRenderFrame(e);
         }
 
-        bool[] animationDone = new bool[] { true, true };
+        bool[] animationDone = new bool[] { true, true, true, true, true, true, true, true, true, true, true, true, true, true };
         System.Collections.Generic.List<int> omitVAOs = new System.Collections.Generic.List<int>();
-
-        int sliceToAnimate = (int)RubiksCube.Slices.Left;
-
+        float speed = 3.0f;
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             /// Check to see if the window is focused
@@ -198,11 +196,18 @@ namespace RubixCubeSolver.Objects
                     _prevTime = frameTime;
                 }
 
+                /// Animations
+                /// Calling them is simple.
+                /// They return false, if they are not complete, and true if they are complete
+                /// So if they return false, call it again... 
+                ///     ...until it returns true, in which case a different way is required to start the function (hence the 2 conditions seen below for each animation)
+                ///     NOTE: !animationDone. The '!' is essential
                 if (input.IsKeyDown(Key.O) && (frameTime > _prevTime + 10) || !animationDone[0])
                 {
                     RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
 
-                    animationDone[0] = rubiksCube.RotateSlice(sliceToAnimate, -1);
+                    //animationDone[0] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Top, -1);
+                    animationDone[0] = rubiksCube.TurnSlice((int)RubiksCube.Turns.U);
 
                     _prevTime = frameTime;
                 }
@@ -210,22 +215,131 @@ namespace RubixCubeSolver.Objects
                 {
                     RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
 
-                    animationDone[1] = rubiksCube.RotateSlice(sliceToAnimate, 1);
+                    //animationDone[1] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Top, 1);
+                    animationDone[1] = rubiksCube.TurnSlice((int)RubiksCube.Turns.Ur);
+
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.U) && (frameTime > _prevTime + 10) || !animationDone[2])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    //animationDone[2] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Bottom, -1);
+                    animationDone[2] = rubiksCube.TurnSlice((int)RubiksCube.Turns.D);
+
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.I) && (frameTime > _prevTime + 10) || !animationDone[3])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    //animationDone[3] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Bottom, 1);
+                    animationDone[3] = rubiksCube.TurnSlice((int)RubiksCube.Turns.Dr);
+
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.H) && (frameTime > _prevTime + 10) || !animationDone[4])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    //animationDone[4] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Right, -1);
+                    animationDone[4] = rubiksCube.TurnSlice((int)RubiksCube.Turns.R);
+
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.J) && (frameTime > _prevTime + 10) || !animationDone[5])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    //animationDone[5] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Right, 1);
+                    animationDone[5] = rubiksCube.TurnSlice((int)RubiksCube.Turns.Rr);
+
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.K) && (frameTime > _prevTime + 10) || !animationDone[6])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    //animationDone[6] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Left, -1);
+                    animationDone[6] = rubiksCube.TurnSlice((int)RubiksCube.Turns.L);
+
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.L) && (frameTime > _prevTime + 10) || !animationDone[7])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    //animationDone[7] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Left, 1);
+                    animationDone[7] = rubiksCube.TurnSlice((int)RubiksCube.Turns.Lr);
+
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.V) && (frameTime > _prevTime + 10) || !animationDone[8])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    //animationDone[8] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Front, -1);
+                    animationDone[8] = rubiksCube.TurnSlice((int)RubiksCube.Turns.F);
+
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.B) && (frameTime > _prevTime + 10) || !animationDone[9])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    //animationDone[9] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Front, 1);
+                    animationDone[9] = rubiksCube.TurnSlice((int)RubiksCube.Turns.Fr);
+
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.N) && (frameTime > _prevTime + 10) || !animationDone[10])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    //animationDone[10] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Back, -1);
+                    animationDone[10] = rubiksCube.TurnSlice((int)RubiksCube.Turns.B);
+
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.M) && (frameTime > _prevTime + 10) || !animationDone[11])
+                {
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    //animationDone[11] = rubiksCube.RotateSlice((int)RubiksCube.Slices.Back, 1);
+                    animationDone[11] = rubiksCube.TurnSlice((int)RubiksCube.Turns.Br);
 
                     _prevTime = frameTime;
                 }
 
-                if (input.IsKeyDown(Key.RBracket) && (frameTime > _prevTime + 10))
+                if (input.IsKeyDown(Key.RBracket) && (frameTime > _prevTime + 10) || !animationDone[12])
                 {
-                    int[] theColors = new int[54];
+                    animationDone[12] = ((RubiksCube)myGameObjects[0]).ScrambleCube(90.0f, false);
 
-                    for (int i = 0; i < 54; i++)
-                    {
-                        theColors[i] = rnd.Next(1, 7);
-                    }
+                    //animationDone[12] = ((RubiksCube)myGameObjects[0]).Algorithm(1, speed: 45.0f);
 
-                    ((RubiksCube)myGameObjects[0]).UpdateColors(theColors);
-                    ((RubiksCubeSlice)myGameObjects[1]).UpdateColors(theColors);
+                    _prevTime = frameTime;
+                }
+                if (input.IsKeyDown(Key.LBracket) && (frameTime > _prevTime + 10) || !animationDone[13])
+                {
+                    animationDone[13] = ((RubiksCube)myGameObjects[0]).SolveCube(speed);
+
+                    //animationDone[12] = ((RubiksCube)myGameObjects[0]).Algorithm(1, speed: 45.0f);
+
+                    _prevTime = frameTime;
+                }
+
+                if (input.IsKeyDown(Key.RAlt))
+                {
+                    speed += 0.5f;
+                }
+                if (input.IsKeyDown(Key.LAlt))
+                {
+                    speed -= 0.5f;
+                }
+
+                if (input.IsKeyDown(Key.Slash) && (frameTime > _prevTime + 10) && !animationDone.Contains(false))
+                {
+                    ((RubiksCube)myGameObjects[0]).ResetCube();
 
                     _prevTime = frameTime;
                 }
@@ -240,7 +354,7 @@ namespace RubixCubeSolver.Objects
 
                             float[] theAngles = gameObject.getAngles();
 
-                            gameObject.setAngles(new float[] { theAngles[0] + 1f, theAngles[1], theAngles[2] });
+                            gameObject.setAngles(new float[] { theAngles[0] - 1f, theAngles[1], theAngles[2] });
                         }
 
                         else if (theGameObject is CompositeGameObject)
@@ -249,7 +363,7 @@ namespace RubixCubeSolver.Objects
 
                             float[] theAngles = gameObject.getAngles();
 
-                            gameObject.setAngles(new float[] { theAngles[0] + 1f, theAngles[1], theAngles[2] });
+                            gameObject.setAngles(new float[] { theAngles[0] - 1f, theAngles[1], theAngles[2] });
                         }
 
                     }
@@ -265,7 +379,7 @@ namespace RubixCubeSolver.Objects
 
                             float[] theAngles = gameObject.getAngles();
 
-                            gameObject.setAngles(new float[] { theAngles[0] - 1f, theAngles[1], theAngles[2] });
+                            gameObject.setAngles(new float[] { theAngles[0] + 1f, theAngles[1], theAngles[2] });
                         }
 
                         else if (theGameObject is CompositeGameObject)
@@ -274,7 +388,7 @@ namespace RubixCubeSolver.Objects
 
                             float[] theAngles = gameObject.getAngles();
 
-                            gameObject.setAngles(new float[] { theAngles[0] - 1f, theAngles[1], theAngles[2] });
+                            gameObject.setAngles(new float[] { theAngles[0] + 1f, theAngles[1], theAngles[2] });
                         }
 
                     }
@@ -289,7 +403,7 @@ namespace RubixCubeSolver.Objects
 
                             float[] theAngles = gameObject.getAngles();
 
-                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] - 1f, theAngles[2] });
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] + 1f, theAngles[2] });
                         }
                         
                         else if (theGameObject is CompositeGameObject)
@@ -298,7 +412,7 @@ namespace RubixCubeSolver.Objects
 
                             float[] theAngles = gameObject.getAngles();
 
-                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] - 1f, theAngles[2] });
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] + 1f, theAngles[2] });
                         }
 
                     }
@@ -322,7 +436,7 @@ namespace RubixCubeSolver.Objects
 
                             float[] theAngles = gameObject.getAngles();
 
-                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] + 1f, theAngles[2] });
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] - 1f, theAngles[2] });
                         }
 
                         else if (theGameObject is CompositeGameObject)
@@ -331,12 +445,12 @@ namespace RubixCubeSolver.Objects
 
                             float[] theAngles = gameObject.getAngles();
 
-                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] + 1f, theAngles[2] });
+                            gameObject.setAngles(new float[] { theAngles[0], theAngles[1] - 1f, theAngles[2] });
                         }
 
                     }
                 }
-                if (input.IsKeyDown(Key.N))
+                if (input.IsKeyDown(Key.Q))
                 {
                     foreach (IGameObject theGameObject in myGameObjects)
                     {
@@ -360,7 +474,7 @@ namespace RubixCubeSolver.Objects
 
                     }
                 }
-                else if (input.IsKeyDown(Key.M))
+                else if (input.IsKeyDown(Key.E))
                 {
                     foreach (IGameObject theGameObject in myGameObjects)
                     {
@@ -390,6 +504,7 @@ namespace RubixCubeSolver.Objects
                 {
                     Console.Clear();
 
+                    /*
                     for (int i = 0; i < getGameObjects().Count; i++)
                     {
                         Console.WriteLine(getGameObjects()[i]);
@@ -400,6 +515,24 @@ namespace RubixCubeSolver.Objects
                     for (int i = 0; i < gameObjectsOnlyList.Count; i++)
                     {
                         Console.WriteLine(gameObjectsOnlyList[i]);
+                    }
+                    //*/
+
+                    RubiksCube rubiksCube = (RubiksCube)myGameObjects[0];
+
+                    System.Collections.Generic.List<int[]> theColors = rubiksCube.getColorsGroupedByPiece();
+
+                    foreach (int[] pieceColors in theColors)
+                    {
+                        Console.Write("{ ");
+
+                        foreach (int color in pieceColors)
+                        {
+                            Console.Write($"{color}, ");
+                        }
+
+                        Console.Write("}, ");
+
                     }
 
                     _prevTime = frameTime;
