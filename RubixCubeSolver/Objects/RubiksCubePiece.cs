@@ -18,23 +18,23 @@ namespace RubixCubeSolver.Objects
             Yellow
         }
 
-        public RubiksCubePiece(Shader shader, int frontColor = 0, int rightColor = 0, int topColor = 0, float scale = 1.0f, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Vector3? position = null) : base(scale, horizontalAngle, verticalAngle, position)
+        public RubiksCubePiece(Shader shader, int frontColor = 0, int rightColor = 0, int topColor = 0, float scale = 1.0f, float[] angles = null, Vector3? position = null) : base(scale, position, angles)
         {
             List<GameMaster.IGameObject> theObjects = new List<GameMaster.IGameObject>();
 
             if (frontColor != 0)
             {
-                theObjects.Add(new Plane(shader, tileSize, 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.51f), ConvertRubiksCubeEnumToColor(frontColor)));
+                theObjects.Add(new Plane(shader, tileSize, new float[] { 0.0f, 0.0f, 0.0f },  new Vector3(0.0f, 0.0f, 0.51f), ConvertRubiksCubeEnumToColor(frontColor)));
             }
 
             if (rightColor != 0)
             {
-                theObjects.Add(new Plane(shader, tileSize, 90.0f, 0.0f, new Vector3(0.51f, 0.0f, 0.0f), ConvertRubiksCubeEnumToColor(rightColor), false, true));
+                theObjects.Add(new SidePlane(shader, tileSize, new float[] { 0.0f, 0.0f, 0.0f }, new Vector3(0.51f, 0.0f, 0.0f), ConvertRubiksCubeEnumToColor(rightColor)));
             }
 
             if (topColor != 0)
             {
-                theObjects.Add(new Plane(shader, tileSize, 0.0f, -90.0f, new Vector3(0.0f, 0.51f, 0.0f), ConvertRubiksCubeEnumToColor(topColor), true));
+                theObjects.Add(new TopPlane(shader, tileSize, new float[] { 0.0f, 0.0f, 0.0f }, new Vector3(0.0f, 0.51f, 0.0f), ConvertRubiksCubeEnumToColor(topColor)));
             }
 
             theObjects.Add(new Cube(shader, color: blackColor));

@@ -58,6 +58,8 @@
     <Compile Include="Objects\Cube.cs" />
     <Compile Include="Objects\GameObject.cs" />
     <Compile Include="Objects\Shader.cs" />
+    <Compile Include="Objects\SidePlane.cs" />
+    <Compile Include="Objects\TopPlane.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -129,7 +129,7 @@ namespace RubixCubeSolver.Objects
                     Matrix4 model = Matrix4.Identity;
 
                     /// Transform each vertex, by model
-                    model *= RotateInXYAroundPoint(new Vector3(0.0f), gameObject.getAngles()[0], gameObject.getAngles()[1], gameObject.getSwitchYForZ(), gameObject.getSwitchXForZ(), gameObject.getInvertRotation());
+                    model *= RotateInXYZAroundPoint(new Vector3(0.0f), new float[] { gameObject.getAngles()[0], gameObject.getAngles()[1], 0.0f });
 
                     model *= Matrix4.CreateScale(gameObject.getScale()) * Matrix4.CreateTranslation(gameObject.getPosition());
 
@@ -672,8 +672,12 @@ namespace RubixCubeSolver.Objects
         /// <param name="objectScale"> Defaults to 1 </param>
         /// <param name="objectColorInput"> Defaults to (1.0, 0.3, 0.31), AKA Pink </param>
         /// <param name="lightColorInput"> Defaults to (1, 1, 1), AKA pure white light </param>
-        public static void Draw(int handleVAO, uint[] indices, Shader shader, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Vector3? Position = null, float Scale = 1.0f, Vector3? Color = null, Vector3? lightColor = null, bool switchYForZ = false, bool switchXForZ = false, int invertXRotation = 1)
+        public static void Draw(int handleVAO, uint[] indices, Shader shader, Matrix4 myTransform, float[] anglesIn = null, Vector3? Position = null, float Scale = 1.0f, Vector3? Color = null, Vector3? lightColor = null, float[] invertRotIn = null, int[] swapAnglesIn = null)
         {
+            float[] angles = anglesIn ?? new float[] { 0.0f, 0.0f, 0.0f };
+            float[] invertRot = invertRotIn ?? new float[] { 1f, 1f, 1f };
+            int[] swapAngles = swapAnglesIn ?? new int[] { 0, 1, 2 };
+
             /// Sets certain values to their defaults
             Vector3 objectPosition = Position ?? new Vector3(0.0f, 0.0f, 0.0f);     /// Default: The centre of the world
 
@@ -693,14 +697,13 @@ namespace RubixCubeSolver.Objects
             /// Set the Transformation Matrix model
 
             /// Move, Scale and Rotate the object
-
             /// Last transformation, is rotating the object around it's centre
-            model *= RotateInXYAroundPoint(new Vector3(0.0f), horizontalAngle, verticalAngle, switchYForZ, switchXForZ, invertXRotation);
+            //model *= RotateInXYZAroundPoint(new Vector3(0.0f), null, new float[] { -1f, -1f, -1f }, null);
+
+            model *= myTransform;
 
             /// Scale and move the object into the correct space in the world
             model *= Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation(objectPosition);
-
-            //model *= RotateInXYAroundPoint(new Vector3(0.0f), horizontalAngle, verticalAngle, switchYForZ, switchXForZ, invertXRotation);
 
             /// Pass Transformation Matrices to the Shader
             /// IMPORTANT: OpenTK's matrix types are transposed from what OpenGL would expect - rows and columns are reversed.
@@ -794,7 +797,7 @@ namespace RubixCubeSolver.Objects
 
             if (isIndexOfPreparedList)
             {
-                Draw(preparedMegaObjectsVAOHandles[gameObjectIndex], preparedMegaObjectsIndices[gameObjectIndex], Game.lightingShader, 0, 0, Color: preparedMegaObjectsColors[gameObjectIndex]);
+                //Draw(preparedMegaObjectsVAOHandles[gameObjectIndex], preparedMegaObjectsIndices[gameObjectIndex], Game.lightingShader, new float[] { 0.0f, 0.0f, 0.0f }, Color: preparedMegaObjectsColors[gameObjectIndex]);
 
                 return;
             }
@@ -803,7 +806,7 @@ namespace RubixCubeSolver.Objects
             {
                 GameObject gameObject = gameObjectsOnlyList[gameObjectIndex];
 
-                Draw(gameObject.getVAOHandle(), gameObject.getIndices(), gameObject.getShader(), gameObject.getAngles()[0], gameObject.getAngles()[1], gameObject.getPosition(), gameObject.getScale(), gameObject.getColor(), lightColor, gameObject.getSwitchYForZ(), gameObject.getSwitchXForZ(), gameObject.getInvertRotation());
+                Draw(gameObject.getVAOHandle(), gameObject.getIndices(), gameObject.getShader(), gameObject.getTransform(), gameObject.getAngles(), gameObject.getPosition(), gameObject.getScale(), gameObject.getColor(), lightColor, gameObject.getInvertRotation(), gameObject.getSwapAngles());
             }
 
         }
@@ -1128,6 +1131,7 @@ namespace RubixCubeSolver.Objects
             GameObject.DisposeAllClones();
         }
 
+        /*
         public static Matrix4 RotateInXYAroundPoint(Vector3 centreRelativeToCurrentObjectCentre, float horizontalRotIn, float verticalRotIn, bool switchYForZ, bool switchXForZ, int invertRotation)
         {
             Matrix4 transform = Matrix4.Identity;
@@ -1135,8 +1139,10 @@ namespace RubixCubeSolver.Objects
             float horizontalRot = horizontalRotIn;
             float verticalRot = verticalRotIn;
 
-            horizontalRot *= invertRotation * -1;
-            
+            //horizontalRot *= invertRotation * -1;
+
+            horizontalRot *= invertRotation;
+
 
             if (switchYForZ)
             {
@@ -1155,6 +1161,69 @@ namespace RubixCubeSolver.Objects
 
             return transform;
         }
+        //*/
+
+        /*
+        public static Matrix4 RotateInXYZAroundPoint(Vector3 centreRelativeToCurrentObjectCentre, float[] anglesIn = null)
+        {
+            float[] angles = anglesIn ?? new float[] { 0.0f, 0.0f, 0.0f };
+
+            Matrix4 transform = Matrix4.Identity * Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre);
+
+            float XRot = angles[0];
+            float YRot = angles[1];
+            float ZRot = angles[2];
+
+            transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-ZRot)) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-XRot)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-YRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
+
+            transform *= Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
+
+            return transform;
+        }
+        //*/
+
+        //*
+        public static Matrix4 RotateInXYZAroundPoint(Vector3 centreRelativeToCurrentObjectCentre, float[] anglesIn = null, float[] invertRotIn = null, int[] swapAnglesIn = null)
+        {
+            float[] angles = anglesIn ?? new float[] { 0.0f, 0.0f, 0.0f };
+            float[] invertRot = invertRotIn ?? new float[] { 1f, 1f, 1f };
+            int[] swapAngles = swapAnglesIn ?? new int[] { 0, 1, 2 };
+
+            Matrix4 transform = Matrix4.Identity * Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre);
+
+            float XRot = angles[swapAngles[0]] * invertRot[swapAngles[0]];
+            float YRot = angles[swapAngles[1]] * invertRot[swapAngles[1]];
+            float ZRot = angles[swapAngles[2]] * invertRot[swapAngles[2]];
+
+            #region .
+            /*
+            /// This wierd construction is to help avoid the problem of gimbal lock
+            for (int i = 0; i < 3; i++)
+            {
+                switch (swapAngles[i])
+                {
+                    case 0:
+                        transform *= Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-XRot));
+                        break;
+
+                    case 1:
+                        transform *= Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-YRot));
+                        break;
+
+                    case 2:
+                        transform *= Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-ZRot));
+                        break;
+                }
+            }
+            //*/
+            #endregion
+
+            transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-XRot)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-YRot)) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-ZRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
+            //transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-YRot)) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-ZRot)) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-XRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
+
+            return transform;
+        }
+        //*/
 
         public static void QuitApp()
         {

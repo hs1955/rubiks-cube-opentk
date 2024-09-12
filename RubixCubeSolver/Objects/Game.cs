@@ -87,12 +87,14 @@ namespace RubixCubeSolver.Objects
             //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(0.0f)));
             //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(2.0f, 0.0f, 0.0f)));
 
-            //AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(0.0f)));
-            //AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(2.0f, 0.0f, 0.0f)));
+            AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(0.0f)));
+            AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(2.0f, 0.0f, 0.0f)));
 
             //AddGameObjects(new RubiksCube(lightingShader, scale: 0.5f, position: new Vector3(0.0f)));
-            AddGameObjects(new CompositeTest(lightingShader, 4, scale: 0.5f, position: new Vector3(0.0f)));
-            theGameObject = (CompositeGameObject)myGameObjects[0];
+            //AddGameObjects(new CompositeTest(lightingShader, 4, scale: 0.5f, position: new Vector3(0.0f)));
+
+            //theGameObject = (CompositeGameObject)myGameObjects[0];
+            theGameObject = (CompositeGameObject)myGameObjects[1];
 
             base.OnLoad(e);
         }
@@ -178,14 +180,14 @@ namespace RubixCubeSolver.Objects
 
                 if (input.IsKeyDown(Key.Number1) && (_frameTime > _prevTime + 10))
                 {
-                    AddGameObjects(new Cube(lightingShader, scale: rnd.Next(5, 15) / 10f, horizontalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, verticalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
+                    AddGameObjects(new Cube(lightingShader, scale: rnd.Next(5, 15) / 10f, angles: new float[] { Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f }, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
 
                     _prevTime = _frameTime;
                 }
 
                 if (input.IsKeyDown(Key.Number2) && (_frameTime > _prevTime + 10))
                 {
-                    AddGameObjects(new Plane(lightingShader, scale: rnd.Next(5, 15) / 10f, horizontalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, verticalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
+                    AddGameObjects(new Plane(lightingShader, scale: rnd.Next(5, 15) / 10f, angles: new float[] { Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f, Convert.ToSingle(rnd.NextDouble()) * 360f }, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
 
                     _prevTime = _frameTime;
                 }
@@ -199,20 +201,31 @@ namespace RubixCubeSolver.Objects
 
                 if (input.IsKeyDown(Key.Up))
                 {
-                    theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] + 1f);
+                    theGameObject.setAngles(theGameObject.getAngles()[0] + 1f, theGameObject.getAngles()[1], theGameObject.getAngles()[2]);
                 }
                 else if (input.IsKeyDown(Key.Down))
                 {
-                    theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] - 1f);
+                    theGameObject.setAngles(theGameObject.getAngles()[0] - 1f, theGameObject.getAngles()[1], theGameObject.getAngles()[2]);
                 }
-
                 if (input.IsKeyDown(Key.Right))
                 {
-                    theGameObject.setAngles(theGameObject.getAngles()[0] - 1f, theGameObject.getAngles()[1]);
+                    theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] - 1f, theGameObject.getAngles()[2]);
                 }
                 else if (input.IsKeyDown(Key.Left))
                 {
-                    theGameObject.setAngles(theGameObject.getAngles()[0] + 1f, theGameObject.getAngles()[1]);
+                    theGameObject.setAngles(theGameObject.getAngles()[0], theGameObject.getAngles()[1] + 1f, theGameObject.getAngles()[2]);
+                }
+                if (input.IsKeyDown(Key.AltLeft))
+                {
+                    float[] theAngles = theGameObject.getAngles();
+
+                    theGameObject.setAngles(new float[] { theAngles[0], theAngles[1], theAngles[2] - 1f });
+                }
+                else if (input.IsKeyDown(Key.AltRight))
+                {
+                    float[] theAngles = theGameObject.getAngles();
+
+                    theGameObject.setAngles(new float[] { theAngles[0], theAngles[1], theAngles[2] + 1f });
                 }
 
                 /// OUTPUT DEBUG INFORMATION
@@ -279,7 +292,7 @@ namespace RubixCubeSolver.Objects
                         float scrollX = theGameObject.getAngles()[0] - deltaX * sensitivity * 1.2f;
                         float scrollY = MathHelper.Clamp(theGameObject.getAngles()[1] - deltaY * sensitivity * 1.2f, -90.0f, 90.0f);
 
-                        theGameObject.setAngles(scrollX, scrollY);
+                        theGameObject.setAngles(scrollX, scrollY, 0.0f);
                     }
                 }
 

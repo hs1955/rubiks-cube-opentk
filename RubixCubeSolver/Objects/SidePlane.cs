@@ -4,7 +4,7 @@ using System.Xml;
 
 namespace RubixCubeSolver.Objects
 {
-    class Plane : GameObject
+    class SidePlane : GameObject
     {
         /// This is an array of vertices, each representing a corner of a triangle, which make up the faces of the cube
         /// Using triangles byfar the most efficient, compatible, and up-to-date method for rendering shapes
@@ -13,10 +13,10 @@ namespace RubixCubeSolver.Objects
         private static float[] vertices =
         {
             /// Front Face
-            0.5f,  0.5f, 0.0f,      /// Top right
-            0.5f, -0.5f, 0.0f,      /// Bottom right
-            -0.5f, -0.5f, 0.0f,     /// Bottom left
-            -0.5f,  0.5f, 0.0f,     /// Top left
+            0.0f, 0.5f,  0.5f,       /// Top right
+            0.0f, 0.5f, -0.5f,     /// Bottom right
+            0.0f, -0.5f, -0.5f,     /// Bottom left
+            0.0f, -0.5f,  0.5f,     /// Top left
 
         };
 
@@ -32,7 +32,7 @@ namespace RubixCubeSolver.Objects
         /// The default color is red
         private static Vector3 myColor = new Vector3(1.0f, 0.0f, 0.0f); /// R G B
 
-        public Plane(Shader shader, float scale = 1.0f, float[] angles = null, Vector3? position = null, Vector3? color = null) : base(vertices, indices, shader, scale, angles, position, color)
+        public SidePlane(Shader shader, float scale = 1.0f, float[] angles = null, Vector3? position = null, Vector3? color = null) : base(vertices, indices, shader, scale, angles, position, color)
         {
             /// Set to the color specified, unless it's null, in which case the default color is red
             setColor(color ?? myColor);

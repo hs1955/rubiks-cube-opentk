@@ -40,7 +40,11 @@ namespace RubixCubeSolver.Objects
         Vector3 objectPos;
         Vector3 objectCol;
         float objectScale;
-        float[] angles = new float[2];
+        float[] angles = new float[3];
+        float[] invertRot = new float[] { 1f, 1f, 1f };
+        int[] swapAngles = new int[3] { 0, 1, 2 };
+
+        Matrix4 myTransform = Matrix4.Identity;
 
         /// Only Information for Other Functions to work properly
 
@@ -54,13 +58,14 @@ namespace RubixCubeSolver.Objects
         float lengthZ = -1.0f;
 
         private string myType;
-        private int invertRotation = 1;
-        private bool switchYForZ;
-        private bool switchXForZ;
+        //private bool switchYForZ;
+        //private bool switchXForZ;
 
         /// The GameObject Constructor. Here is where all the information is initialized and set (including default values), upon creation of the object
-        public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shaderIn, float objectScaleIn = 1.0f, float horizontalAngleIn = 0.0f, float verticalAngleIn = 0.0f, Vector3? objectPosIn = null, Vector3? objectColIn = null, bool switchYForZIn = false, bool switchXForZIn = false)
+        //public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shaderIn, float objectScaleIn = 1.0f, float[] anglesIn = null, Vector3? objectPosIn = null, Vector3? objectColIn = null, bool switchYForZIn = false, bool switchXForZIn = false)
+        public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shaderIn, float objectScaleIn = 1.0f, float[] anglesIn = null, Vector3? objectPosIn = null, Vector3? objectColIn = null)
         {
+            float[] angles = anglesIn ?? new float[] { 0.0f, 0.0f, 0.0f };
             objectVertices = objectVerticesIn;
             objectIndices = objectIndicesIn;
 
@@ -71,10 +76,10 @@ namespace RubixCubeSolver.Objects
             objectPos = objectPosIn ?? new Vector3(0.0f);               /// (0, 0, 0) is the centre of the world
             objectCol = objectColIn ?? new Vector3(1.0f, 0.3f, 0.31f);  /// R G B  This is a pink color
 
-            switchYForZ = switchYForZIn;
-            switchXForZ = switchXForZIn;
+            //switchYForZ = switchYForZIn;
+            //switchXForZ = switchXForZIn;
 
-            setAngles(horizontalAngleIn, verticalAngleIn);
+            setAngles(angles);
 
             /// If this object has not been created yet, generate VBO and EBO for GameObject, and store in dictionary, for use.
             if (!count.ContainsKey(this.GetType().ToString()))
@@ -102,7 +107,7 @@ namespace RubixCubeSolver.Objects
         }
         /// This is private, since vertices should always be set under normal circumstances
         /// All the private methods here are specifically required for cloning an object
-        void setVertices(float[] value)
+        public void setVertices(float[] value)
         {
             objectVertices = value;
         }
@@ -450,6 +455,80 @@ namespace RubixCubeSolver.Objects
         {
             return angles;
         }
+        public void setAngles(float[] anglesIn)
+        {
+            if (anglesIn.Length != 3)
+            {
+                throw new Exception("Incorrect data given for angles");
+            }
+
+            /// No value can be above 360 degrees
+            /// This however gives these angles a range between -360 and 360
+            for (int i = 0; i < 3; i++)
+            {
+                /// Here, control which angles affect which axis - most useful for GameObjects part of CompositeGameObjects, and rotations are not according to standardised axes
+                angles[i] = anglesIn[i] % 360;
+            }
+
+        }
+        public void setAngles(float XAngle, float YAngle, float ZAngle)
+        {
+            setAngles(new float[3] { XAngle, YAngle, ZAngle });
+        }
+
+        public int[] getSwapAngles()
+        {
+            return swapAngles;
+        }
+        public void setSwapAngles(int[] swapAnglesIn)
+        {
+            if (swapAnglesIn.Length != 3)
+            {
+                throw new Exception("Incorrect data given for angles");
+            }
+
+            for (int i = 0; i < 3; i++)
+            {
+                swapAngles[i] = swapAnglesIn[i];
+            }
+
+        }
+        public void setSwapAngles(int Xindex, int Yindex, int Zindex)
+        {
+            setSwapAngles(new int[3] { Xindex, Yindex, Zindex });
+        }
+        public void SwapAngles(int index1, int index2)
+        {
+            int temp = swapAngles[index1];
+            swapAngles[index1] = swapAngles[index2];
+            swapAngles[index2] = temp;
+        }
+
+        public float[] getInvertRotation()
+        {
+            return invertRot;
+        }
+        public void setInvertRotation(float[] invertIn)
+        {
+            if (invertIn.Length != 3)
+            {
+                throw new Exception("Incorrect data given for angles");
+            }
+
+            /// No value can be above 360 degrees
+            /// This however gives these angles a range between -360 and 360
+            for (int i = 0; i < 3; i++)
+            {
+                invertRot[i] = MathHelper.Clamp(invertIn[i], -1, 1);
+            }
+
+        }
+        public void setInvertRotation(float invertX, float invertY, float invertZ)
+        {
+            setInvertRotation(new float[3] { invertX, invertY, invertZ });
+        }
+
+        /*
         public void setAngles(float horizontalAngleIn = 0.0f, float verticalAngleIn = 0.0f)
         {
             /// Neither value can be above 360 degrees
@@ -461,14 +540,15 @@ namespace RubixCubeSolver.Objects
             angles[1] = verticalAngleIn;
             
         }
+        //*/
 
-        public int getInvertRotation()
+        public Matrix4 getTransform()
         {
-            return invertRotation;
+            return myTransform;
         }
-        public void setInvertRotation(int value)
+        public void setTransform(Matrix4 value)
         {
-            invertRotation = value;
+            myTransform = value;
         }
 
         public string getMyType()
@@ -478,6 +558,16 @@ namespace RubixCubeSolver.Objects
         public void setMyType(string value)
         {
             myType = value;
+        }
+
+        /*
+        public int getInvertRotation()
+        {
+            return invertRotation;
+        }
+        public void setInvertRotation(int value)
+        {
+            invertRotation = value;
         }
 
         public bool getSwitchYForZ()
@@ -497,6 +587,7 @@ namespace RubixCubeSolver.Objects
         {
             switchXForZ = value;
         }
+        //*/
 
         public void DisposeThisGameObject(bool isThisObjectPartOfComposite = false)
         {
@@ -551,7 +642,7 @@ namespace RubixCubeSolver.Objects
         {
             if (perfectClone)
             {
-                return new GameObject(objectVertices, objectIndices, shader, objectScale, getAngles()[0], getAngles()[1], objectPos, objectCol);
+                return new GameObject(objectVertices, objectIndices, shader, objectScale, angles, objectPos, objectCol);
             }
 
             /// if false, then a very special semiclone is created.
@@ -582,9 +673,11 @@ namespace RubixCubeSolver.Objects
             clonedGameObject.setColor(objectCol);
 
             /// Angle the object correctly
-            clonedGameObject.setAngles(getAngles()[0], getAngles()[1]);
-            clonedGameObject.setSwitchYForZ(switchYForZ);
-            clonedGameObject.setInvertRotation(invertRotation);
+            clonedGameObject.setAngles(angles);
+            //clonedGameObject.setSwitchYForZ(switchYForZ);
+            clonedGameObject.setInvertRotation(invertRot);
+
+            clonedGameObject.setTransform(myTransform);
 
             #region RACASTING APPROACH (Detection Box)
             //genAndOutLongestXYZ(out lengthX, out lengthY, out lengthZ);
