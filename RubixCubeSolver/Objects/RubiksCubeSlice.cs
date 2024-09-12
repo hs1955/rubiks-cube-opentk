@@ -1,6 +1,5 @@
 ﻿using OpenTK;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace RubixCubeSolver.Objects
 {
@@ -8,9 +7,9 @@ namespace RubixCubeSolver.Objects
     {
         List<GameMaster.IGameObject> theObjects;
 
-        int[] colors = new int[21];
+        int[] colors;
 
-        public RubiksCubeSlice(Shader shader, float scale = 1.0f, Vector3? position = null, float[] angles = null, float[] invertRot = null) : base(scale, position, angles, invertRot)
+        public RubiksCubeSlice(Shader shader, float scale = 1.0f, Vector3? position = null, float[] angles = null, bool hide = false, float[] invertRot = null) : base(scale, position, angles, hide)
         {
             theObjects = new List<GameMaster.IGameObject>()
             {
@@ -56,17 +55,19 @@ namespace RubixCubeSolver.Objects
             return colors;
         }
 
+        #region .
+        //public void UpdateColors(int[] colors, bool leftRightSide = false, bool frontBackSide = false)
+        #endregion
+
         /// <summary>
         /// Updates the colors, changing the colors of the tiles
         /// </summary>
-        public void UpdateColors(int[] colors, bool leftRightSide = false, bool frontBackSide = false)
+        public void UpdateColors(int[] colors)
         {
-            //*
             if (colors.Length != 21)
             {
                 throw new System.Exception($"Incorrect number of colors given. There should be 21, what was given has {colors.Length}");
             }
-            //*/
 
             int offset = 0;
 
@@ -85,15 +86,15 @@ namespace RubixCubeSolver.Objects
 
             }
 
+            #region .
+            /*
             if (leftRightSide)
             {
-                //*
                 RearrangePiecesColors(new int[] { 3, 5 }, false, true);
                 RearrangePiecesColors(new int[] { 0, 8 }, true, true);
 
                 RearrangePiecesColors(new int[] { 2, 6 }, false, true);
                 RearrangePiecesColors(new int[] { 2, 6 }, true, false);
-                //*/
             }
 
             else if (frontBackSide)
@@ -106,16 +107,18 @@ namespace RubixCubeSolver.Objects
                 RearrangePiecesColors(new int[] { 0, 8 }, true, false);
             }
 
+            //*/
+            #endregion
         }
 
-        void RearrangePiecesColors(int[] pieceIndexes, bool swapFrontWithRightTiles = false, bool swapFrontWithTopTiles = false)
+        public void RearrangePieceColors(int[] pieceIndexes, bool swapFrontWithRightTiles = false, bool swapFrontWithTopTiles = false)
         {
             foreach (int index in pieceIndexes)
             {
                 RearrangePieceColors(index, swapFrontWithRightTiles, swapFrontWithTopTiles);
             }
         }
-        void RearrangePieceColors(int pieceIndex, bool swapFrontWithRightTiles = false, bool swapFrontWithTopTiles = false)
+        public void RearrangePieceColors(int pieceIndex, bool swapFrontWithRightTiles = false, bool swapFrontWithTopTiles = false)
         {
             int[] theColors;
             theColors = (int[])((RubiksCubePiece)theObjects[pieceIndex]).getColors().Clone();
@@ -136,7 +139,5 @@ namespace RubixCubeSolver.Objects
 
             ((RubiksCubePiece)theObjects[pieceIndex]).UpdateColors(theColors);
         }
-
     }
-
 }

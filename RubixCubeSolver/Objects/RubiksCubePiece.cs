@@ -7,75 +7,45 @@ namespace RubixCubeSolver.Objects
     {
         readonly Vector3 blackColor = new Vector3(0.05f);
         const float tileSize = 0.9f;
-        const float tileSpaceFromCentre = 0.53f;
+        const float disFrmBcking = 0.03f;
         int[] colors;
-        List<GameMaster.IGameObject> theObjects = new List<GameMaster.IGameObject>();
 
         public enum RubiksCubeColors
         {
-            /*
             White = 1,
             Red,
             Blue,
             Orange,
             Green,
-            Yellow
-            //*/
-
-            White = 1,
-            Red,
-            Green,
-            Orange,
-            Blue,
             Yellow
         }
 
-        public RubiksCubePiece(Shader shader, int frontColor = 0, int rightColor = 0, int topColor = 0, float scale = 1.0f, Vector3? position = null, float[] angles = null, float[] invertRot = null) : base(scale, position, angles, invertRot)
+        public RubiksCubePiece(Shader shader, int frontColor = 0, int rightColor = 0, int topColor = 0, float scale = 1.0f, float[] angles = null, Vector3? position = null) : base(scale, position, angles)
         {
+            List<GameMaster.IGameObject> theObjects = new List<GameMaster.IGameObject>();
+
             List<int> theColors = new List<int>();
 
             if (frontColor != 0)
             {
-                theObjects.Add(new Plane(shader, tileSize, new Vector3(0.0f, 0.0f, tileSpaceFromCentre), ConvertRubiksCubeEnumToColor(frontColor), new float[] { 0.0f, 0.0f, 0.0f }, new float[] { 1.0f, 1.0f, 1.0f }));
-                theObjects.Add(new Plane(shader, 1.0f, new Vector3(0.0f, 0.0f, 0.5f), blackColor, new float[] { 0.0f, 0.0f, 0.0f }, new float[] { 1.0f, 1.0f, 1.0f }));
-                
+                theObjects.Add(new Plane(shader, tileSize, new float[] { 0.0f, 0.0f, 0.0f },  new Vector3(0.0f, 0.0f, 0.50f + disFrmBcking), ConvertRubiksCubeEnumToColor(frontColor)));
+                theObjects.Add(new Plane(shader, 1.0f, new float[] { 0.0f, 0.0f, 0.0f }, new Vector3(0.0f, 0.0f, 0.50f), blackColor));
                 theColors.Add(frontColor);
             }
 
-            //*
             if (rightColor != 0)
             {
-                theObjects.Add(new SidePlane(shader, tileSize, new Vector3(tileSpaceFromCentre, 0.0f, 0.0f), ConvertRubiksCubeEnumToColor(rightColor), new float[] { 0.0f, 0.0f, 0.0f }, new float[] { 1.0f, 1.0f, 1.0f }, new int[] { 0, 1, 2 }));
-                theObjects.Add(new SidePlane(shader, 1.0f, new Vector3(0.5f, 0.0f, 0.0f), blackColor, new float[] { 0.0f, 0.0f, 0.0f }, new float[] { 1.0f, 1.0f, 1.0f }, new int[] { 0, 1, 2 }));
-
+                theObjects.Add(new SidePlane(shader, tileSize, new float[] { 0.0f, 0.0f, 0.0f }, new Vector3(0.50f + disFrmBcking, 0.0f, 0.0f), ConvertRubiksCubeEnumToColor(rightColor)));
+                theObjects.Add(new SidePlane(shader, 1.0f, new float[] { 0.0f, 0.0f, 0.0f }, new Vector3(0.50f, 0.0f, 0.0f), blackColor));
                 theColors.Add(rightColor);
             }
 
             if (topColor != 0)
             {
-                theObjects.Add(new TopPlane(shader, tileSize, new Vector3(0.0f, tileSpaceFromCentre, 0.0f), ConvertRubiksCubeEnumToColor(topColor), new float[] { 0.0f, 0.0f, 0.0f }, new float[] { 1.0f, 1.0f, 1.0f }));
-                theObjects.Add(new TopPlane(shader, 1.0f, new Vector3(0.0f, 0.5f, 0.0f), blackColor, new float[] { 0.0f, 0.0f, 0.0f }, new float[] { 1.0f, 1.0f, 1.0f }));
-
+                theObjects.Add(new TopPlane(shader, tileSize, new float[] { 0.0f, 0.0f, 0.0f }, new Vector3(0.0f, 0.50f + disFrmBcking, 0.0f), ConvertRubiksCubeEnumToColor(topColor)));
+                theObjects.Add(new TopPlane(shader, 1.0f, new float[] { 0.0f, 0.0f, 0.0f }, new Vector3(0.0f, 0.50f, 0.0f), blackColor));
                 theColors.Add(topColor);
             }
-            //*/
-
-            /*
-            if (rightColor != 0)
-            {
-                theObjects.Add(new Plane(shader, tileSize, new Vector3(0.51f, 0.0f, 0.0f), ConvertRubiksCubeEnumToColor(rightColor), new float[] { 90.0f, 0.0f, 0.0f }, new float[] { 1.0f, 1.0f, 1.0f }, new int[] { 0, 1, 2 }));
-                colors.Add(rightColor);
-            }
-
-            if (topColor != 0)
-            {
-                theObjects.Add(new Plane(shader, tileSize, new Vector3(0.0f, 0.51f, 0.0f), ConvertRubiksCubeEnumToColor(topColor), new float[] { 0.0f, 90.0f, 0.0f }, new float[] { 1.0f, 1.0f, 1.0f }, new int[] { 0, 1, 2 }));
-                colors.Add(topColor);
-            }
-            //*/
-
-            //theObjects.Add(new Cube(shader, color: blackColor));
-            //theObjects.Add(new Cube(shader, color: blackColor));
 
             colors = theColors.ToArray();
 
@@ -101,7 +71,7 @@ namespace RubixCubeSolver.Objects
             for (int i = 0; i < colors.Length; i++)
             {
                 colors[i] = colorsIn[i];
-                ((GameObject)theObjects[i*2]).setColor(ConvertRubiksCubeEnumToColor(colorsIn[i]));
+                ((GameObject)getGameObjects()[i * 2]).setColor(ConvertRubiksCubeEnumToColor(colorsIn[i]));
             }
 
         }
@@ -121,7 +91,7 @@ namespace RubixCubeSolver.Objects
                     break;
 
                 case 3:
-                    myColor = new Vector3(0.0f, 0.51f, 0.0f); /// Green
+                    myColor = new Vector3(0.0f, 0.0f, 0.9f); /// Blue
                     break;
 
                 case 4:
@@ -129,7 +99,7 @@ namespace RubixCubeSolver.Objects
                     break;
 
                 case 5:
-                    myColor = new Vector3(0.0f, 0.0f, 0.9f); /// Blue
+                    myColor = new Vector3(0.0f, 0.51f, 0.0f); /// Green
                     break;
 
                 case 6:
@@ -165,5 +135,7 @@ namespace RubixCubeSolver.Objects
 
             UpdateColors(theColors);
         }
+
+
     }
 }
