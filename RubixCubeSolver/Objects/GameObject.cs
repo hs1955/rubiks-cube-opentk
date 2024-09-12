@@ -1,8 +1,6 @@
 ﻿using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace RubixCubeSolver.Objects
 {
@@ -34,14 +32,17 @@ namespace RubixCubeSolver.Objects
         Vector3 objectPos;
         Vector3 objectCol;
         float objectScale;
+        float[] angles = new float[2];
+        Matrix4 myModel = new Matrix4();
 
         /// Only Information for Other Functions to work properly
         /// Total Number of these objects
         private static int count;
-        //private bool clone = false;
+        private string myType;
+        private bool switchYForZ;
 
         /// The GameObject Constructor. Here is where all the information is initialized and set (including default values), upon creation of the object
-        public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shaderIn, float objectScaleIn = 1.0f, Vector3? objectPosIn = null, Vector3? objectColIn = null)
+        public GameObject(float[] objectVerticesIn, uint[] objectIndicesIn, Shader shaderIn, float objectScaleIn = 1.0f, float horizontalAngleIn = 0.0f, float verticalAngleIn = 0.0f, Vector3? objectPosIn = null, Vector3? objectColIn = null, bool switchYForZIn = false)
         {
             objectVertices = objectVerticesIn;
             objectIndices = objectIndicesIn;
@@ -55,17 +56,22 @@ namespace RubixCubeSolver.Objects
             objectPos = objectPosIn ?? new Vector3(0.0f);               /// (0, 0, 0) is the centre of the world
             objectCol = objectColIn ?? new Vector3(1.0f, 0.3f, 0.31f);  /// R G B  This is a pink color
 
+            switchYForZ = switchYForZIn;
+
+            setAngles(horizontalAngleIn, verticalAngleIn);
+
+            myModel = Matrix4.Identity * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(verticalAngleIn)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(horizontalAngleIn));
+
             count++;
         }
 
         /// A special GameObject which holds no information, this one is required specifically for cloning of a GameObject, and thus empty GameObjects can only exist within this class.
-        GameObject() { }
+        public GameObject() { }
 
         public float[] getVertices()
         {
             return objectVertices;
         }
-
         /// This is private, since vertices should always be set under normal circumstances
         /// All the private methods here are specifically required for cloning an object
         void setVertices(float[] value)
@@ -77,7 +83,6 @@ namespace RubixCubeSolver.Objects
         {
             return objectIndices;
         }
-
         void setIndices(uint[] value)
         {
             objectIndices = value;
@@ -87,7 +92,6 @@ namespace RubixCubeSolver.Objects
         {
             return shader;
         }
-
         void setShader(Shader value)
         {
             shader = value;
@@ -95,8 +99,6 @@ namespace RubixCubeSolver.Objects
 
         /// The same type of objects, have the same type of VBOs and EBOs, so these are now static, but only exist when a single type of the GameObject exists.
         /// They are regenerated once none of the GameObjects exists, and a new one is created
-        
-        //*
         public int genAndGetVBOHandle()
         {
             /// If VBO doesn't exist
@@ -126,81 +128,12 @@ namespace RubixCubeSolver.Objects
                 /// 
                 /// Writing to the proper memory space is important! Generally, you'll only want StaticDraw,
                 /// But be sure to use the right one for your use case. 
-                GL.BufferData(BufferTarget.ArrayBuffer, this.getVertices().Length * sizeof(float), this.getVertices(), BufferUsageHint.DynamicDraw);
+                GL.BufferData(BufferTarget.ArrayBuffer, this.getVertices().Length * sizeof(float), this.getVertices(), BufferUsageHint.StaticDraw);
 
             }
 
             return VBO;
         }
-        //*/
-        /*
-        public int genAndGetVBOHandle()
-        {
-            /// If this object is a clone, then trying to obtain a VBO won't work, since it won't have a VBO, while it is emulating a type that does exist with it's own VBO
-            if (clone)
-            {
-                if (VBO == -1)
-                {
-                    throw new Exception("VBO of clone does not exist.");
-                }
-
-                return VBO;
-            }
-
-            /// This object os not a clone
-            /// If VBO doesn't exist
-            else if (VBO == -1)
-            {
-                /// Initialize a VBO for this object
-                /// Create Buffer for Object
-                VBO = GL.GenBuffer();
-
-                /// Obtain Handle to Our Buffer
-                GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-
-                /// Finally, upload the vertices to the buffer.
-                /// Arguments:
-                /// 1) Which buffer the data should be sent to.
-                /// 2) How much data is being sent, in bytes. 
-                /// You can generally set this to the length of your array, multiplied by sizeof(array type).
-                /// 3) The vertices themselves.
-                /// 4) How the buffer will be used, so that OpenGL can write the data to the proper memory space on the GPU.
-                /// 
-                /// There are three different BufferUsageHints for drawing:
-                /// StaticDraw: This buffer will rarely, if ever, update after being initially uploaded.
-                /// 
-                /// DynamicDraw: This buffer will change frequently after being initially uploaded.
-                /// 
-                /// StreamDraw: This buffer will change on every frame.
-                /// 
-                /// Writing to the proper memory space is important! Generally, you'll only want StaticDraw,
-                /// But be sure to use the right one for your use case. 
-                GL.BufferData(BufferTarget.ArrayBuffer, this.getVertices().Length * sizeof(float), this.getVertices(), BufferUsageHint.DynamicDraw);
-
-                /// Store the VBO of this GameObject in the dictionary (since any object of the same type will can the same VBO (as long as their main vertices are the same - which they should be for the same type of object)
-                VBOs.Add(this.GetType(), VBO);
-
-                return VBO;
-
-            }
-
-            /// Cannot add clones to VBOs or EBOs
-            if (this.GetType().Name == "GameObject")
-            {
-                throw new Exception("Cannot add clones (which always have type GameObject) to the list of VBOs or EBOs");
-            }
-
-            /// This object is not a clone and has a VBO, so retrieve the correct VBO handle
-            if (VBOs.TryGetValue(this.GetType(), out int value))
-            {
-                return VBOs[this.GetType()];
-            }
-
-            /// The object that has called this function is itself a clone, and is trying to access it's type's
-            return VBO;
-        }
-        //*/
-
         void setVBOHandle(int value)
         {
             VBO = value;
@@ -229,7 +162,7 @@ namespace RubixCubeSolver.Objects
                 GL.BindBuffer(BufferTarget.ElementArrayBuffer, EBO);
 
                 /// Finally, upload the vertices to the buffer.
-                GL.BufferData(BufferTarget.ElementArrayBuffer, this.getIndices().Length * sizeof(uint), this.getIndices(), BufferUsageHint.DynamicDraw);
+                GL.BufferData(BufferTarget.ElementArrayBuffer, this.getIndices().Length * sizeof(uint), this.getIndices(), BufferUsageHint.StaticDraw);
 
             }
 
@@ -250,6 +183,10 @@ namespace RubixCubeSolver.Objects
         public int getVAOHandle()
         {
             return VAO;
+        }
+        public void setVAOHandle(int value)
+        {
+            VAO = value;
         }
 
         public Vector3 getPosition()
@@ -288,15 +225,58 @@ namespace RubixCubeSolver.Objects
             count = value;
         }
 
+        public float[] getAngles()
+        {
+            return angles;
+        }
+        public void setAngles(float horizontalAngleIn = 0.0f, float verticalAngleIn = 0.0f)
+        {
+            /// Neither value can be above 360 degrees
+            /// This however gives these angles a range between -360 and 360
+            horizontalAngleIn %= 360;
+            verticalAngleIn %= 360;
+
+            angles[0] = horizontalAngleIn;
+            angles[1] = verticalAngleIn;
+            
+        }
+
+        public string getMyType()
+        {
+            return myType;
+        }
+        public void setMyType(string value)
+        {
+            myType = value;
+        }
+
+        public Matrix4 getMyModel()
+        {
+            return myModel;
+        }
+        public void setMyModel(Matrix4 value)
+        {
+            myModel = value;
+        }
+
+        public bool getSwitchYForZ()
+        {
+            return switchYForZ;
+        }
+        public void setSwitchYForZ(bool value)
+        {
+            switchYForZ = value;
+        }
+
         public void DisposeThisGameObject(bool isThisObjectPartOfComposite = false)
         {
             /// If there aren't any more objects of this type, delete the GameObject Type's buffers
-            if (getCount() == 0)
+            if (true) //(getCount() == 0)
             {
-                /// Delete (static) VBO Handle in the GameObject Type
+                /// Delete VBO Handle in the GameObject Type
                 delVBOHandle();
 
-                /// Delete (static) EBO Handle in the GameObject Type
+                /// Delete EBO Handle in the GameObject Type
                 delEBOHandle();
             }
 
@@ -331,7 +311,7 @@ namespace RubixCubeSolver.Objects
         {
             if (perfectClone)
             {
-                return new GameObject(objectVertices, objectIndices, shader, objectScale, objectPos, objectCol);
+                return new GameObject(objectVertices, objectIndices, shader, objectScale, getAngles()[0], getAngles()[1], objectPos, objectCol);
             }
 
             /// if false, then a very special semiclone is created.
@@ -354,6 +334,13 @@ namespace RubixCubeSolver.Objects
             clonedGameObject.setPosition(objectPos);
             clonedGameObject.setScale(objectScale);
             clonedGameObject.setColor(objectCol);
+            clonedGameObject.setAngles(getAngles()[0], getAngles()[1]);
+            clonedGameObject.setMyModel(myModel);
+            clonedGameObject.setSwitchYForZ(switchYForZ);
+
+            /// Save the type of this object in a separate variable
+            /// Although this GameObject renders exactly like it's original, it cannot be casted into it's original's type, so the only way to distinguish what type it is, is by using a separate variable to store the string
+            clonedGameObject.setMyType(GetType().ToString());
 
             //clone = true;
 

@@ -5,7 +5,7 @@ namespace RubixCubeSolver.Objects
 {
     class CompositeTest : CompositeGameObject
     {
-        public CompositeTest(Shader shader, int version, float scale = 1.0f, Vector3? position = null) : base(scale, position) 
+        public CompositeTest(Shader shader, int version, float scale = 1.0f, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Vector3? position = null) : base(scale, horizontalAngle, verticalAngle, position)
         {
             switch (version)
             {

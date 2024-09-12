@@ -3,11 +3,24 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 using System.Collections.Generic;
 using System.Linq;
+using System.Drawing.Drawing2D;
 
 namespace RubixCubeSolver.Objects
 {
     public static class GameMaster
     {
+        public static Camera _camera;
+
+        public static bool _firstMove = true;
+
+        public static Vector2 _lastPos;
+
+        static string[] verticesOrder = new string[2]
+        {
+            "Plane",
+            "Cube"
+        };
+
         public interface IGameObject { }
 
         /*
@@ -27,142 +40,262 @@ namespace RubixCubeSolver.Objects
         //*/
 
         /// List of GameObjects
-        //static List<GameObject> myGameObjects = new List<GameObject>();
-        static List<IGameObject> myGameObjects = new List<IGameObject>();
+        public static List<IGameObject> myGameObjects = new List<IGameObject>();
 
         public static ref List<IGameObject> getGameObjects()
         {
             return ref myGameObjects;
         }
 
-        public static List<GameObject> GameObjectsOnlyList()
+        public static List<GameObject> gameObjectsOnlyList = new List<GameObject>();
+
+        public static void UpdateGameObjectsOnlyList()
         {
-            List<GameObject> theGameObjects = new List<GameObject>();
+            gameObjectsOnlyList.Clear();
 
             foreach (var item in myGameObjects)
             {
                 if (item is GameObject)
                 {
-                    theGameObjects.Add((GameObject)item);
+                    gameObjectsOnlyList.Add((GameObject)item);
                 }
 
                 else if (item is CompositeGameObject)
                 {
-                    theGameObjects.AddRange(((CompositeGameObject)item).ConvertToGameObjects());
+                    gameObjectsOnlyList.AddRange(((CompositeGameObject)item).ConvertToGameObjects());
                 }
             }
 
-            return theGameObjects;
-
         }
 
-        /// Declaration of Matrices for Conversions between Coordinate Systems
+        public static List<GameObject> preparedGameObjectsList = new List<GameObject>();
 
-        /* The Coordinate Systems:
-         * There are a total of 5 different coordinate systems that are of importance to us:
+        /// <summary>
+        /// This function updates the prepared list, reordering all the elements, in ascending order of number of vertices.
+        /// This prevents a bug, where rendering an object with less vertices, than the object previously rendered, causes (only) the previously rendered object to have vertices cut off from rendering
+        /// </summary>
+        public static void UpdatePreparedGameObjectList()
+        {
+            UpdateGameObjectsOnlyList();
 
-         * Local space (or Object space):  Local coordinates are the coordinates of your object relative to its local origin; they're the coordinates your object begins in.
-         * 
-         * World space: These coordinates are relative to a global origin of the world, together with many other objects also placed relative to the world's origin.
-         * 
-         * View space (or Eye space): Transform each coordinate so they appear as seen from the camera or viewer's point of view.
-         * 
-         * Clip space: Clip coordinates are processed to the -1.0 and 1.0 range and determine which vertices will end up on the screen.
-         * 
-         * Screen space:  A process, called viewport transform, transforms the coordinates from -1.0 and 1.0 to the coordinate range defined by GL.Viewport. 
-         * 
-         * The resulting coordinates are then sent to the rasterizer to turn them into fragments. AKA, this step turns the non-understandable coordinates from clip space, to coordinates that computers can understand and render properly (eg. GL.Viewport origin in bottom left instead of centre of the screen, like in clip space)
+            preparedGameObjectsList.Clear();
+
+            if (gameObjectsOnlyList.Count == 0)
+            {
+                return;
+            }
+
+            if (gameObjectsOnlyList.Count == 1)
+            {
+                preparedGameObjectsList.Add(gameObjectsOnlyList[0]);
+                return;
+            }
+
+            for (int i = 0; i < verticesOrder.Length; i++)
+            {
+                string theType = verticesOrder[i];
+
+                for (int j = 0; j < gameObjectsOnlyList.Count; j++)
+                {
+                    GameObject gameObject = gameObjectsOnlyList[j];
+                    string itsType;
+
+                    /// If this object is a clone, you need a different way of identifying it, since it's type is simpily GameObject, and is too vague for use
+                    if (gameObject.GetType().ToString().EndsWith("GameObject"))
+                    {
+                        itsType = gameObject.getMyType();
+                    }
+
+                    /// If the object is not a clone, use gain it's orginal type in the regular way
+                    else
+                    {
+                        itsType = gameObject.GetType().ToString();
+                    }
+
+                    if (itsType.EndsWith(theType))
+                    {
+                        preparedGameObjectsList.Add(gameObject);
+                    }
+                }
+
+            }
+        }
+
+        /*
+        public static void UpdatePreparedGameObjectList()
+        {
+            UpdateGameObjectsOnlyList();
+
+            /// If there is no objects, there is nothing to prepare
+            if (gameObjectsOnlyList.Count == 0)
+            {
+                preparedGameObjectsList.Clear();
+                return;
+            }
+
+            if (preparedGameObjectsList.Count == 0)
+            {
+                preparedGameObjectsList.Add(gameObjectsOnlyList[0]);
+            }
+
+            /// If there's 0 or 1 GameObjects in the world, there are no objects to separate here, so render straight away
+            if (gameObjectsOnlyList.Count < 2)
+            {
+                preparedGameObjectsList.Clear();
+                preparedGameObjectsList.AddRange(gameObjectsOnlyList);
+
+                return;
+            }
+
+            /// Must delete objects that no longer exist
+            /// For every GameObject in the preparedGameObjectsList
+            foreach (GameObject gameObject in preparedGameObjectsList)
+            {
+                /// If it is not in the gameObjectsOnlyList
+                if (!gameObjectsOnlyList.Contains(gameObject))
+                {
+                    /// Delete information
+                    preparedGameObjectsList.Remove(gameObject);
+                }
+            }
+
+            /// Check and insert elements into the list
+            /// For every GameObject in the gameObjectsOnlyList
+            foreach (GameObject gameObject in gameObjectsOnlyList)
+            {
+                /// If the prepared list does not contain this gameObject, then this object is new and must be added
+                if (!preparedGameObjectsList.Contains(gameObject))
+                {
+                    /// If for some reason, there is only one type of GameObject available
+                    if (verticesOrder.Length == 1)
+                    {
+                        /// Just add the gameObject - there will ont be any conflict in rendering, due to different GameObjects, since there are not any different GameObjects in this specific case
+                        preparedGameObjectsList.Add(gameObject);
+                        continue;
+                    }
+
+                    else
+                    {
+                        /// For each GameObject Type
+                        /// (Run at least once)
+                        for (int i = 0; i < verticesOrder.Length - 1; i++)
+                        {
+                            if (gameObject.GetType().ToString().EndsWith(verticesOrder[0]))
+                            {
+                                preparedGameObjectsList.Insert(0, gameObject);
+
+                                /// This object has been added, so there is no reason to check further
+                                continue;
+                            }
+
+                            /// This part inserts the rest of the GameObjects in the order specified by the verticesOrder (which is based on the number of vertices each GameObject has)
+                            else if (gameObject.GetType().ToString().EndsWith(verticesOrder[i]))
+                            {
+                                for (int j = 0; j < preparedGameObjectsList.Count - 1; j++)
+                                {
+                                    /// Insert where the first object of the same type lies
+                                    if (preparedGameObjectsList[j].GetType().ToString().EndsWith(verticesOrder[i]) && !preparedGameObjectsList[j + 1].GetType().ToString().EndsWith(verticesOrder[i]))
+                                    {
+                                        preparedGameObjectsList.Insert(j, gameObject);
+                                        break;
+                                    }
+                                }
+
+                                /// This object has been added, so there is no reason to check further
+                                continue;
+                            }
+
+                            /// If the GameObject is of the final type in verticesOrder
+                            else if (gameObject.GetType().ToString().EndsWith(verticesOrder[verticesOrder.Length - 1]))
+                            {
+                                /// Insert where the first object of the same type lies
+                                for (int j = 0; j < preparedGameObjectsList.Count - 1; j++)
+                                {
+                                    if (preparedGameObjectsList[j].GetType().ToString().EndsWith(verticesOrder[verticesOrder.Length - 2]) && preparedGameObjectsList[j + 1].GetType().ToString().EndsWith(verticesOrder[verticesOrder.Length - 1]))
+                                    {
+                                        preparedGameObjectsList.Insert(j, gameObject);
+                                        break;
+                                    }
+                                }
+
+                                /// This object has been added, so there is no reason to check further
+                                continue;
+                            }
+                        }
+
+                        /// If the object's type is the first to be rendered, insert at the start of the prepared list
+                        //if (preparedGameObjectsList[j].GetType().ToString() == verticesOrder[0])
+                          //  preparedGameObjectsList.Insert(0, gameObject);
+
+                        //else if (preparedGameObjectsList[j].GetType().ToString() == verticesOrder[1])
+
+                            /// Insert where the first object of the same type lies
+                          //  preparedGameObjectsList.Insert(
+                                preparedGameObjectsList.FindIndex(thisGameObject => thisGameObject.GetType().ToString() == verticesOrder[0] && thisGameObject.GetType().ToString() == verticesOrder[1])
+                                    , gameObject);
+                        
+                    }
+                }
+            }
+        }
+        /*
+        /// <summary>
+        /// This function returns a list of all the GameObjects to render, except there is an empty GameObject, between objects of different types, to stop them conflicting with each other.
+        /// </summary>
+        /// <returns> A list of all the GameObjects to render, except there is an empty GameObject, between objects of different types, to stop them conflicting with each other. </returns>
+        public static void UpdatePreparedGameObjectList()
+        {
+            UpdategameObjectsOnlyList();
+
+            if (preparedGameObjectsList.Count == 0)
+            {
+                preparedGameObjectsList.AddRange(gameObjectsOnlyList);
+            }
+
+            /// If there's 0 or 1 GameObjects in the world, there are no objects to separate here, so render straight away
+            if (gameObjectsOnlyList.Count < 2)
+            {
+                preparedGameObjectsList.Clear();
+                preparedGameObjectsList.AddRange(gameObjectsOnlyList);
+
+                return;
+            }
+
+            /// Add all the GameObjects in
+            for (int i = 0; i < gameObjectsOnlyList.Count; i++)
+            {
+                if (!preparedGameObjectsList.Contains(gameObjectsOnlyList[i]))
+                {
+                    preparedGameObjectsList.Add(gameObjectsOnlyList[i]);
+                }
+            }
+
+            /// Add and remove empty objects, where necessary
+            for (int i = 0; i < preparedGameObjectsList.Count - 1; i++)
+            {
+                /// If the next object / preparedGameObjectsList[i + 1] is a GameObject, then preparedGameObjectsList[i], and preparedGameObjectsList[i + 2] have been seperated, otherwise, they have not been seperated
+                if (!(preparedGameObjectsList[i + 1].GetType().ToString() == "GameObject"))
+                {
+                    /// If the types of preparedGameObjectsList[i] and preparedGameObjectsList[i + 1] are not the same, separate them
+                    if (preparedGameObjectsList[i].GetType() != preparedGameObjectsList[i + 1].GetType())
+                    {
+                        /// This is an empty GameObject, and does not appear at all when rendered.
+                        preparedGameObjectsList.Insert(i + 1, new GameObject(new float[3] { 1.0f, 1.0f, 1.0f }, new uint[1] { 0 }, Game.lightingShader));
+                        //prepGameObjects.Add(new GameObject(new float[0], new uint[0], Game.lightingShader));
+                    }
+                }
+
+                /// If an empty GameObject is inbetween two objects of the same type
+                else if ((i < preparedGameObjectsList.Count - 2) && preparedGameObjectsList[i].GetType() == preparedGameObjectsList[i + 2].GetType() && preparedGameObjectsList[i + 1].GetType().ToString() == "GameObject")
+                {
+                    preparedGameObjectsList[i + 1].DisposeThisGameObject();
+                    preparedGameObjectsList.RemoveAt(i + 1);
+                    i--;
+                }
+            }
+
+        }
         //*/
-
-        /// <summary>
-        /// This determines the position of the model.
-        /// </summary>
-        static Matrix4 model;
-
-        public static Matrix4 getModel()
-        {
-            return model;
-        }
-
-        public static void setModel(Matrix4 value)
-        {
-            model = value;
-        }
-
-        /// <summary>
-        /// The matrix adding the camera of OpenGL
-        /// </summary>
-        static Matrix4 view;
-
-        public static Matrix4 getView()
-        {
-            return view;
-        }
-
-        public static void setView(Matrix4 value)
-        {
-            view = value;
-        }
-
-        /// <summary>
-        /// To transform vertex coordinates from view to clip-space.
-        /// Also specifies a range of coordinates e.g. -1000 and 1000 in each dimension. 
-        /// The projection matrix then transforms coordinates within this specified range to normalized device coordinates (-1.0, 1.0).
-        /// All coordinates outside this range will not be mapped between -1.0 and 1.0 and therefore be clipped.
-        /// </summary>
-        static Matrix4 projection;
-
-        public static Matrix4 getProjection()
-        {
-            return projection;
-        }
-
-        public static void setProjection(Matrix4 value)
-        {
-            projection = value;
-        }
-
-        /// <summary>
-        /// This value is responsible for allowing the view to rotate vertically
-        /// Vertical Rotation Number
-        /// </summary>
-        static float vertRotNum;
-
-        public static float getVertRotNum()
-        {
-            return vertRotNum;
-        }
-
-        public static void setVertRotNum(float value)
-        {
-            vertRotNum = value;
-        }
-
-        public static void incVertRotNum(float value)
-        {
-            vertRotNum += value;
-        }
-
-        /// <summary>
-        /// This value is responsible for allowing the view to rotate horizontally
-        /// Horizontal Rotation Number
-        /// </summary>
-        static float horRotNum;
-
-        public static float getHorRotNum()
-        {
-            return horRotNum;
-        }
-
-        public static void setHorRotNum(float value)
-        {
-            horRotNum = value;
-        }
-
-        public static void incHorRotNum(float value)
-        {
-            horRotNum += value;
-        }
 
         /// <summary>
         /// Adds GameObjects, so they can be drawn.
@@ -343,66 +476,6 @@ namespace RubixCubeSolver.Objects
             return -1;            
         }
 
-        #region OLD SETUP VAO
-        /*
-        ///<summary>
-        /// This function sets up a VAO, using a given VBO, EBO and Shader.
-        /// VAOs store a lot of information, which can all be received from one call of our VAO:
-        /// When Binding VAOs, the relavant VBO, EBO and Shader informaation is all gathered is obtained.
-        /// Shader defaults to the lighting shader
-        ///</summary>
-        private int SetupVAO(int VBO, int EBO, Shader objectShaderInput = null)
-        {
-            /// Defaults the objectShader to our lighting shader 
-            /// (It is highly unlikely that any other shader would be used)
-            Shader objectShader = objectShaderInput ?? _lightingShader;
-
-            /// The Handle to our VAO.
-            int HandleVAO = GL.GenVertexArray();
-            
-            /// Initialization code
-
-            /// Bind Vertex Array Object
-            GL.BindVertexArray(HandleVAO);
-
-            /// Copy our vertices array in a buffer for OpenGL to use
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-
-            /// The location of a vertex after being transformed by the transformation matrices
-            var vertexLocation = objectShader.GetAttribLocation("aPos");
-
-            /// We specified how OpenGL should interpret the vertex data
-            /// Arguments:
-            /// 1) Location of the input variable in the shader. 
-            /// The layout(location = 0) line in the vertex shader explicitly sets it to 0.
-            /// 
-            /// 2) How many elements will be sent to the variable. 
-            /// In this case, 3 floats for every vertex.
-            /// 
-            /// 3) The data type of the elements set, in this case float.
-            /// Whether or not the data should be converted to normalized device coordinates. 
-            /// In this case, false, because that's already done.
-            /// 
-            /// 4) The stride; this is how many bytes are between the last element of one vertex and the first element of the next. 
-            /// 3 * sizeof(float) in this case.
-            /// 
-            /// 5) The offset; this is how many bytes it should skip to find the first element of the first vertex. 0 as of right now.
-            /// Stride and Offset are mostly useful when defining texture coordinates.
-            GL.VertexAttribPointer(vertexLocation, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-
-            /// We should also enable the vertex attribute; vertex attributes are disabled by default
-            GL.EnableVertexAttribArray(vertexLocation);
-
-            /// Bind VBO and EBO to the VAO...
-            /// ... so that when the individual VAO is loaded, the correct VBO and EBO is loaded too.
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, EBO);
-
-            return HandleVAO;
-        }
-        //*/
-        #endregion
-
         /// <summary>
         /// Allows drawing of any particular arrangment of vertices and indices stored in a VAO
         /// </summary>
@@ -411,21 +484,16 @@ namespace RubixCubeSolver.Objects
         /// <param name="objectScale"> Defaults to 1 </param>
         /// <param name="objectColorInput"> Defaults to (1.0, 0.3, 0.31), AKA Pink </param>
         /// <param name="lightColorInput"> Defaults to (1, 1, 1), AKA pure white light </param>
-        public static void Draw(int handleVAO, uint[] indices, Shader shader, Vector3? Position = null, float Scale = 1.0f, Vector3? Color = null, Vector3? lightColor = null)
+        public static void Draw(int handleVAO, uint[] indices, Shader shader, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Matrix4? modelIn = null, Vector3? Position = null, float Scale = 1.0f, Vector3? Color = null, Vector3? lightColor = null, bool switchYForZ = false)
         {
-            /// This is a check for if the VAO exists, otherwise the program will crash within this function
-            if (ObtainGameObjectIndex(handleVAO) == -1)
-            {
-                /// If the function has not returned anything by this point, then the VAO does not exist, so an error should be thrown
-                throw new IndexOutOfRangeException($"No GameObject was found with the VAO: {handleVAO}");
-            }
-
             /// Sets certain values to their defaults
             Vector3 objectPosition = Position ?? new Vector3(0.0f, 0.0f, 0.0f);     /// Default: The centre of the world
 
             Vector3 objectColor = Color ?? new Vector3(1.0f, 0.3f, 0.31f);          /// Default: This is a pink color
 
             Vector3 objectlightColor = lightColor ?? new Vector3(1.0f, 1.0f, 1.0f); /// Default: This is a white color
+
+            Matrix4 model = Matrix4.Identity;
 
             /// Load the VAO (which contains our VBO, EBO, and Shader)
             GL.BindVertexArray(handleVAO);
@@ -435,14 +503,38 @@ namespace RubixCubeSolver.Objects
             shader.SetVector3("lightColor", objectlightColor);
 
             /// Set the Transformation Matrix model
+
+            /// Move, Scale and Rotate the object
+
+            /*
+            /// Lastly, rotate the object around its local space, so it is facing the correct direction
+            model *= Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-verticalAngle)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-horizontalAngle));
+
+            /// Position it correctly?
+            model *= modelIn ?? Matrix4.Identity;
+
+            //*/
+
+            /// Last transformation, is rotating the object around it's centre
+            model *= RotateInXYAroundPoint(new Vector3(0.0f), horizontalAngle, verticalAngle, switchYForZ);
+
+            /// Scale and move the object into the correct space in the world
+            model *= Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation(objectPosition);
+
+            //model *= Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-verticalAngle)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-horizontalAngle)) * Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation(objectPosition);
+
+            //model *= Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-verticalAngle)) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-horizontalAngle)) * Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation(objectPosition);
+
+            //model *= Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-horizontalAngle)) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-verticalAngle)) * Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation(objectPosition);
+
+            //model *= Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-horizontalAngle)) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-verticalAngle)) * Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation(objectPosition);
+
+            //model *= Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation(objectPosition) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-verticalAngle)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-horizontalAngle));
+
+            //model *= Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(Game._frameTime));
+
             /// Rotate the objects when the mouse is dragged across the screen
-            model = Matrix4.Identity * Matrix4.CreateRotationY(horRotNum) * Matrix4.CreateRotationX(vertRotNum);
-
-            /// Scale the object
-            model *= Matrix4.CreateScale(Scale);
-
-            /// Set the object position in the world
-            model *= Matrix4.CreateTranslation(objectPosition);
+            //model *= RotateInXYAroundPoint(-objectPosition, Game.horRotNum, Game.vertRotNum, false);
 
             /// Pass Transformation Matrices to the Shader
             /// IMPORTANT: OpenTK's matrix types are transposed from what OpenGL would expect - rows and columns are reversed.
@@ -452,8 +544,8 @@ namespace RubixCubeSolver.Objects
             /// This is usually done each render iteration since transformation matrices tend to change a lot
 
             shader.SetMatrix4("model", model);
-            shader.SetMatrix4("view", view);
-            shader.SetMatrix4("projection", projection);
+            shader.SetMatrix4("view", _camera.GetViewMatrix());
+            shader.SetMatrix4("projection", _camera.GetProjectionMatrix());
 
             /// Enable the shader (this shader becomes enabled globally)
             shader.Use();
@@ -480,6 +572,10 @@ namespace RubixCubeSolver.Objects
             /// This index is equivelant to the index of the GameObject in the myGameObjects List
             int gameObjectIndex = ObtainGameObjectIndex(objectVAOHandle);
 
+            DrawWithIndex(gameObjectIndex, false, lightColor);
+
+            #region OLD CODE
+            /*
             /// Obtain the GameObject with the requested VAO
             IGameObject theGameObject = myGameObjects[gameObjectIndex];
 
@@ -497,6 +593,8 @@ namespace RubixCubeSolver.Objects
                     Draw(objectVAOHandle, ((GameObject)theGameObject).getIndices(), ((GameObject)theGameObject).getShader(), ((GameObject)theGameObject).getPosition(), ((GameObject)theGameObject).getScale(), ((GameObject)theGameObject).getColor(), lightColor);
                 }
             }
+            //*/
+            #endregion
 
         }
 
@@ -505,25 +603,23 @@ namespace RubixCubeSolver.Objects
         /// </summary>
         /// <param name="objectIndex"> The object Index </param>
         /// <param name="lightColor"> The color of light on the object </param>
-        public static void DrawWithIndex(int gameObjectIndex, Vector3? lightColor = null)
+        public static void DrawWithIndex(int gameObjectIndex, bool isIndexOfPreparedList, Vector3? lightColor = null)
         {
-            /// Obtain the GameObject with the requested VAO
-            IGameObject theGameObject = myGameObjects[gameObjectIndex];
+            UpdatePreparedGameObjectList();
 
-            if (theGameObject is GameObject)
+            GameObject gameObject;
+
+            if (isIndexOfPreparedList)
             {
-                GameObject gameObject = (GameObject)theGameObject;
-
-                Draw(gameObject.getVAOHandle(), gameObject.getIndices(), gameObject.getShader(), gameObject.getPosition(), gameObject.getScale(), gameObject.getColor(), lightColor);
+                gameObject = preparedGameObjectsList[gameObjectIndex];
             }
 
-            else if (theGameObject is CompositeGameObject)
+            else
             {
-                foreach (GameObject gameObjectPiece in ((CompositeGameObject)theGameObject).ConvertToGameObjects())
-                {
-                    Draw(gameObjectPiece.getVAOHandle(), gameObjectPiece.getIndices(), gameObjectPiece.getShader(), gameObjectPiece.getPosition(), gameObjectPiece.getScale(), gameObjectPiece.getColor(), lightColor);
-                }
+                gameObject = gameObjectsOnlyList[gameObjectIndex];
             }
+
+            Draw(gameObject.getVAOHandle(), gameObject.getIndices(), gameObject.getShader(), gameObject.getAngles()[0], gameObject.getAngles()[1], gameObject.getMyModel(), gameObject.getPosition(), gameObject.getScale(), gameObject.getColor(), lightColor, gameObject.getSwitchYForZ());
 
         }
 
@@ -536,11 +632,13 @@ namespace RubixCubeSolver.Objects
             /// If there's nothing to omit from being drawn
             if (omitVAOs == null || omitVAOs.Count == 0)
             {
+                UpdatePreparedGameObjectList();
+
                 /// Draw all GameObjects and information
-                for (int i = 0; i < myGameObjects.Count; i++)
+                for (int i = 0; i < preparedGameObjectsList.Count; i++)
                 {
                     /// Again, since we aren't after a specific object, it makes sense to draw using the index of the game object in the myGameObjects List
-                    DrawWithIndex(i);
+                    DrawWithIndex(i, true);
                 }
             }
 
@@ -560,22 +658,23 @@ namespace RubixCubeSolver.Objects
             }
         }
 
-        /*
-        public static void DrawWorld(Vector3? lightColorIn = null)
+        public static Matrix4 RotateInXYAroundPoint(Vector3 centreRelativeToCurrentObjectCentre, float horizontalRot, float verticalRot, bool switchYForZ)
         {
-            CompositeGameObject world = new CompositeGameObject();
+            Matrix4 transform = Matrix4.Identity;
 
-            Vector3 lightColor = lightColorIn ?? new Vector3(1.0f);
-
-            world.setGameObjects(myGameObjects);
-
-            foreach (GameObject gameObjectPiece in world.ConvertToGameObjects())
+            if (switchYForZ)
             {
-                Draw(gameObjectPiece.getVAOHandle(), gameObjectPiece.getIndices(), gameObjectPiece.getShader(), gameObjectPiece.getPosition(), gameObjectPiece.getScale(), gameObjectPiece.getColor(), lightColor);
+                transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(horizontalRot)) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-verticalRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
             }
 
+            else
+            {
+                transform *= Matrix4.CreateTranslation(centreRelativeToCurrentObjectCentre) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-horizontalRot)) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-verticalRot)) * Matrix4.CreateTranslation(-centreRelativeToCurrentObjectCentre);
+            }
+
+            return transform;
         }
-        //*/
+
         public static void QuitApp()
         {
             //Run any code which I want to, before exitting the application, most likely message box

@@ -4,11 +4,11 @@ using System.Collections.Generic;
 namespace RubixCubeSolver.Objects
 {
     /// <summary>
-    /// This abstract class, will allow for all types of GameObjects that can be rendered, to exist in the same List. Any class that inherits from GameObject, will become one. GameObjects are any objects, with vertices and indices, and a position.
+    /// This class, will allow for all types of GameObjects that can be rendered, to exist in the same List. Any class that inherits from GameObject, will become one. GameObjects are any objects, with vertices and indices, and a position.
     /// Abstract classes cannot be instantiated, but can be inherited
     /// </summary>
     public class CompositeGameObject : GameMaster.IGameObject
-    {
+    { 
         /// This List contains all the GameObjects that CompositeGameObjects will have
         List<GameMaster.IGameObject> gameObjects = new List<GameMaster.IGameObject>();
 
@@ -20,18 +20,23 @@ namespace RubixCubeSolver.Objects
 
         /// These Attributes Have Defaults
         Vector3 objectPos;
-
         float objectScale;
+        float[] angles = new float[2];
+        Matrix4 myModel = new Matrix4();
 
         /// Total Number of these objects
         private static int count;        
 
-        /// The GameObject Constructor. Here is where all the information is initialized and set (including default values), upon creation of the object
-        public CompositeGameObject(float objectScaleIn = 1.0f, Vector3? objectPosIn = null)
+        /// The CompositeGameObject Constructor. Here is where all the information is initialized and set (including default values), upon creation of the object
+        public CompositeGameObject(float objectScaleIn = 1.0f, float horizontalAngleIn = 0.0f, float verticalAngleIn = 0.0f, Vector3? objectPosIn = null)
         {
             objectScale = objectScaleIn;
 
             objectPos = objectPosIn ?? new Vector3(0.0f);               /// (0, 0, 0) is the centre of the world
+
+            setAngles(horizontalAngleIn, verticalAngleIn);
+
+            myModel = Matrix4.Identity * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(verticalAngleIn)) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(horizontalAngleIn));
 
             count++;
         }
@@ -64,6 +69,30 @@ namespace RubixCubeSolver.Objects
             count = value;
         }
 
+        public float[] getAngles()
+        {
+            return angles;
+        }
+        public void setAngles(float horizontalAngleIn = 0.0f, float verticalAngleIn = 0.0f)
+        {
+            /// Neither value can be above 360 degrees
+            /// This however gives these angles a range between -360 and 360
+            horizontalAngleIn %= 360;
+            verticalAngleIn %= 360;
+
+            angles[0] = horizontalAngleIn;
+            angles[1] = verticalAngleIn;
+        }
+
+        public Matrix4 getMyModel()
+        {
+            return myModel;
+        }
+        public void setMyModel(Matrix4 value)
+        {
+            myModel = value;
+        }
+
         public void DisposeThisCompositeGameObject()
         {
             /// This is the number of objects to delete
@@ -90,7 +119,7 @@ namespace RubixCubeSolver.Objects
                     for (int j = 0; j < numberOfTheseObjectsBeforeDeletion; j++)
                     {
                         /// Dispose of them
-                        theGameObjects[i].DisposeThisGameObject(true);
+                        theGameObjects[j].DisposeThisGameObject(true);
                     }
                 }
             }
@@ -134,8 +163,29 @@ namespace RubixCubeSolver.Objects
             foreach (GameObject aGameObject in theGameObjects)
             {
                 /// Set attributes, depending on the CompositeGameObejct
-                aGameObject.setPosition(aGameObject.getPosition() + objectPos);
+
+                #region Test Stuff
+                //Vector3 theObjectPos = objectPos;
+
+                //Matrix3 moveFromobjectPosToCentre = new Matrix3() { M11 = 1, M12 = 0, M13 = theObjectPos.X, M21 = 0, M22 = 1, M23 = theObjectPos.Y, M31 = 0, M32 = 0, M33 = theObjectPos.Z };
+
+                //Matrix3 moveToobjectPosFromCentre = new Matrix3() { M11 = 1, M12 = 0, M13 = -theObjectPos.X, M21 = 0, M22 = 1, M23 = -theObjectPos.Y, M31 = 0, M32 = 0, M33 = -theObjectPos.Z };
+
+                //Matrix3 fullRotation = moveFromobjectPosToCentre * (Matrix3.CreateRotationY(aGameObject.getAngles()[0]) * Matrix3.CreateRotationX(aGameObject.getAngles()[1])) * moveToobjectPosFromCentre;
+
+                //aGameObject.setPosition(aGameObject.getPosition() + fullRotation * objectPos);
+                #endregion
+
+                /// If there is no rotation, then this is definitely the position to rotate by
+                //aGameObject.setPosition(aGameObject.getPosition() + objectPos);
+
+                Matrix3 transform = Matrix3.CreateRotationX(MathHelper.DegreesToRadians(this.getAngles()[1])) * Matrix3.CreateRotationY(MathHelper.DegreesToRadians(this.getAngles()[0]));
+
+                aGameObject.setPosition(objectPos + transform * aGameObject.getPosition());
+
                 aGameObject.setScale(aGameObject.getScale() * objectScale);
+                aGameObject.setAngles(aGameObject.getAngles()[0] + this.getAngles()[0], aGameObject.getAngles()[1] + this.getAngles()[1]);
+                aGameObject.setMyModel(aGameObject.getMyModel() * myModel);
 
             }
 

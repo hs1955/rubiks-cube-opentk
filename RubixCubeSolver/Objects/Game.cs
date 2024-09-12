@@ -19,25 +19,28 @@ namespace RubixCubeSolver.Objects
         private string _shaderFilePath = Path.GetFullPath("OpenGL_Shaders/");
 
         /// Our Lamp Shader
-        private Shader _lightingShader;
+        public static Shader lightingShader;
+
+        private bool pause = true;
+
+        public static int _frameTime;
+        private int _prevTime;
 
         /// Creating the OpenTK window class to our Game window
         public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title) { }
 
         #region Variables required for the dragging motion
-        /// <summary>
-        /// Holds the mouse previous state (and needs a default value initially)
-        /// </summary>
-        MouseState prevMouse = Mouse.GetCursorState();
+        /*
+        public static float horRotNum;
 
-        /// <summary>
-        /// This variable defines differentiates between the mouse being dragged, and the mouse being first clicked:   
-        /// true = first click || false = being dragged
-        /// </summary>
-        bool mouseNotPressedPrevFrame = true;
+        public static float vertRotNum;
 
-        float mouseCameraSensitivity = 100f;
+        private static bool mouseNotPressedPrevFrame = true;
 
+        private static MouseState prevMouse = Mouse.GetState();
+
+        private static float mouseCameraSensitivity = 100f;
+        //*/
         #endregion
 
         #endregion
@@ -59,7 +62,6 @@ namespace RubixCubeSolver.Objects
             }
 
             GL.ClearColor(0.9f, 0.9f, 0.9f, 1.0f);
-            //GL.ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
             /// We enable depth testing here.
             /// If you try to draw something more complex than one plane without this, you'll notice that polygons further in the background will occasionally be drawn over the top of the ones in the foreground.
@@ -68,42 +70,22 @@ namespace RubixCubeSolver.Objects
             GL.Enable(EnableCap.DepthTest);
 
             /// Create Lighting Shader
-            // The lighting shaders uses the lighting.frag shader which is what a large part of this chapter will be about
-            _lightingShader = new Shader(_shaderFilePath + "shader.vert", _shaderFilePath + "lighting.frag");
+            /// The lighting shaders uses the lighting.frag shader which is what a large part of this chapter will be about
+            lightingShader = new Shader(_shaderFilePath + "shader.vert", _shaderFilePath + "lighting.frag");
+
+            /// We initialize the camera so that it is 3 units back from where the rectangle is and give it the proper aspect ratio
+            _camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);
+
+            //AddGameObjects(new Plane(lightingShader, 1.8f, 0f, 0f, position: new Vector3(1.0f), color: new Vector3(0.7f, 0.5f, 0.8f)));
+            //AddGameObjects(new Cube(lightingShader));
+
+            //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 1.0f, 90f, 0f, position: new Vector3(0.0f)));
+            AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(0.0f)));
+            //AddGameObjects(new RubiksCubePiece(lightingShader, 2, 3, 4, 1.0f, 0f, 0f, position: new Vector3(2.0f, 0.0f, 0.0f)));
             
-            /// Initialization of Some Transformation Matrices
+            //AddGameObjects(new RubiksCubePiece(lightingShader, 1, 5, 6, 1.0f, position: new Vector3(2.0f)));
 
-            /// This is what the camera sees
-            /// We move it backwards on the Z axis.
-            setView(Matrix4.CreateTranslation(0.0f, 0.0f, -5.0f));
-
-            /// An orthographic projection matrix defines a cube-like frustum box that defines the clipping space where each vertex outside this box is clipped.
-            /// The first two parameters specify the left and right coordinate of the frustum.
-            /// The third and fourth parameter specify the bottom and top part of the frustum. 
-            /// The distances between the near and far planes are the 5th and 6th parameter.
-            /// This specific projection matrix transforms all coordinates between these x, y and z range values to normalized device coordinates.
-            //_projection = Matrix4.CreateOrthographicOffCenter(0.0f, Width, 0.0f, Height, 0.1f, 100.0f);
-
-            /// A perspective projection, takes the perspective effect into account, where objects that are further away appear smaller
-            /// For the matrix, we use a few parameters.
-            ///   Field of view. This determines how much the viewport can see at once. 45 is considered the most "realistic" setting, but most video games nowadays use 90
-            ///   Aspect ratio. This should be set to Width / Height.
-            ///   Near-clipping. Any vertices closer to the camera than this value will be clipped.
-            ///   Far-clipping. Any vertices farther away from the camera than this value will be clipped.
-            setProjection(Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45f), Width / (float)Height, 0.1f, 100.0f));
-
-            AddGameObjects(new Cube(_lightingShader));
-            AddGameObjects(new Plane(_lightingShader, position: new Vector3(0.5f), color: new Vector3(0.7f, 0.6f, 0.3f)));
-
-            //AddGameObjects(new Cube(_lightingShader , 1.3f, new Vector3(1.0f), new Vector3(1.0f)));
-
-            //AddGameObjects(new CompositeTest(_lightingShader, 2, scale: 0.5f , position: new Vector3(-0.5f, 0.0f, 0.0f)));
-
-            //AddGameObjects(new RubiksCubePiece(_lightingShader, (int)RubiksCubePiece.RubiksCubeColors.Orange));
-
-            //AddGameObjects(new RubiksCubePiece(_lightingShader, (int)RubiksCubePiece.RubiksCubeColors.Red, (int)RubiksCubePiece.RubiksCubeColors.Blue, (int)RubiksCubePiece.RubiksCubeColors.Orange));
-
-            //AddGameObjects(new RubiksCubePiece(_lightingShader));
+            AddGameObjects(new RubiksCube(lightingShader, position: new Vector3(0.0f)));
 
             base.OnLoad(e);
         }
@@ -113,9 +95,9 @@ namespace RubixCubeSolver.Objects
             /// Clears the screen, using color set in OnLoad
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            DrawAllGameObjects(omitVAOs);
+            _frameTime += 1;
 
-            //DrawWorld();
+            DrawAllGameObjects(omitVAOs);
 
             /// One area is displayed, while the other is being rendered to. Then, when you call SwapBuffers, the two are reversed. A single-buffered context could have issues such as screen tearing.
             Context.SwapBuffers();
@@ -123,23 +105,150 @@ namespace RubixCubeSolver.Objects
             base.OnRenderFrame(e);
         }
 
-        protected override void OnResize(EventArgs e)
-        {
-            /// Reset the viewport to the new width and height
-            GL.Viewport(0, 0, Width, Height);
-
-            base.OnResize(e);
-        }
-
         System.Collections.Generic.List<int> omitVAOs = new System.Collections.Generic.List<int>();
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
+            /// Check to see if the window is focused
+            if (!Focused) 
+            {
+                return;
+            }
+
             /// Our Keyboard on this frame
             KeyboardState input = Keyboard.GetState();
 
             /// Our Mouse on this frame
-            MouseState mouse = Mouse.GetCursorState();
+            MouseState mouse = Mouse.GetState();
 
+            if (pause)
+            {
+                if (mouse.IsButtonDown(MouseButton.Left))
+                {
+                    CursorVisible = false;
+                    pause = false;
+                }
+
+                else
+                {
+                    return;
+                }
+            }
+
+            const float cameraSpeed = 1.5f;
+            const float sensitivity = 0.2f;
+
+            #region Controls
+            if (input.IsKeyDown(Key.W))
+            {
+                _camera.Position += _camera.Front * cameraSpeed * (float)e.Time; // Forward
+            }
+            if (input.IsKeyDown(Key.S))
+            {
+                _camera.Position -= _camera.Front * cameraSpeed * (float)e.Time; // Backwards
+            }
+            if (input.IsKeyDown(Key.A))
+            {
+                _camera.Position -= _camera.Right * cameraSpeed * (float)e.Time; // Left
+            }
+            if (input.IsKeyDown(Key.D))
+            {
+                _camera.Position += _camera.Right * cameraSpeed * (float)e.Time; // Right
+            }
+            if (input.IsKeyDown(Key.Space))
+            {
+                _camera.Position += _camera.Up * cameraSpeed * (float)e.Time; // Up
+            }
+            if (input.IsKeyDown(Key.LShift))
+            {
+                _camera.Position -= _camera.Up * cameraSpeed * (float)e.Time; // Down
+            }
+
+            if (input.IsKeyDown(Key.Number1) && (_frameTime > _prevTime + 10))
+            {
+                AddGameObjects(new Cube(lightingShader, scale: rnd.Next(5, 15) / 10f, horizontalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, verticalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
+
+                _prevTime = _frameTime;
+            }
+
+            if (input.IsKeyDown(Key.Number2) && (_frameTime > _prevTime + 10))
+            {
+                AddGameObjects(new Plane(lightingShader, scale: rnd.Next(5, 15) / 10f, horizontalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, verticalAngle: Convert.ToSingle(rnd.NextDouble()) * 360f, position: new Vector3(rnd.Next(-3, 3), rnd.Next(-3, 3), rnd.Next(-3, 3)), color: new Vector3(Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()), Convert.ToSingle(rnd.NextDouble()))));
+
+                _prevTime = _frameTime;
+            }
+            
+            if (input.IsKeyDown(Key.Number0) && (_frameTime > _prevTime + 10))
+            {
+                DisposeAllGameObjects();
+
+                _prevTime = _frameTime;
+            }
+
+            if (input.IsKeyDown(Key.Up))
+            {
+                ((CompositeGameObject)myGameObjects[1]).setAngles(((CompositeGameObject)myGameObjects[1]).getAngles()[0], ((CompositeGameObject)myGameObjects[1]).getAngles()[1] + 1f);
+            }
+            else if (input.IsKeyDown(Key.Down))
+            {
+                ((CompositeGameObject)myGameObjects[1]).setAngles(((CompositeGameObject)myGameObjects[1]).getAngles()[0], ((CompositeGameObject)myGameObjects[1]).getAngles()[1] - 1f);
+            }
+
+            if (input.IsKeyDown(Key.Right))
+            {
+                ((CompositeGameObject)myGameObjects[1]).setAngles(((CompositeGameObject)myGameObjects[1]).getAngles()[0] - 1f, ((CompositeGameObject)myGameObjects[1]).getAngles()[1]);
+            }
+            else if (input.IsKeyDown(Key.Left))
+            {
+                ((CompositeGameObject)myGameObjects[1]).setAngles(((CompositeGameObject)myGameObjects[1]).getAngles()[0] + 1f, ((CompositeGameObject)myGameObjects[1]).getAngles()[1]);
+            }
+
+            /// OUTPUT DEBUG INFORMATION
+            if (input.IsKeyDown(Key.Z) && (_frameTime > _prevTime + 10))
+            {
+                Console.Clear();
+
+                for (int i = 0; i < getGameObjects().Count; i++)
+                {
+                    Console.WriteLine(getGameObjects()[i]);
+                }
+
+                Console.WriteLine("\n");
+
+                for (int i = 0; i < preparedGameObjectsList.Count; i++)
+                {
+                    Console.WriteLine(preparedGameObjectsList[i]);
+                }
+
+                _prevTime = _frameTime;
+            }
+
+            if (input.IsKeyDown(Key.Escape))
+            {
+                CursorVisible = true;
+                pause = true;
+            }
+
+            if (_firstMove) // this bool variable is initially set to true
+            {
+                _lastPos = new Vector2(mouse.X, mouse.Y);
+                _firstMove = false;
+            }
+            else
+            {
+                // Calculate the offset of the mouse position
+                var deltaX = mouse.X - _lastPos.X;
+                var deltaY = mouse.Y - _lastPos.Y;
+                _lastPos = new Vector2(mouse.X, mouse.Y);
+
+                // Apply the camera pitch and yaw (we clamp the pitch in the camera class)
+                _camera.Yaw += deltaX * sensitivity;
+                _camera.Pitch -= deltaY * sensitivity; // reversed since y-coordinates range from bottom to top
+            }
+
+            #endregion
+
+            #region OLD CODE
+            /*
             /// If the left mouse button is pressed
             if (mouse.IsButtonDown(MouseButton.Left))
             {
@@ -161,15 +270,15 @@ namespace RubixCubeSolver.Objects
 
                 /// Vertical Rotation
                 /// If the next rotation in the Y direction, will not be above 90 degrees or below -90 degrees, which is inbetween -90 and 90 degrees
-                if (Math.Abs(getVertRotNum() + scrollY) < MathHelper.DegreesToRadians(90f))
+                if (Math.Abs(vertRotNum + scrollY) < MathHelper.DegreesToRadians(90f))
                 {
                     /// Set the current value to rotate by, to the new value (vertRotNum + scrollY)
-                    incVertRotNum(scrollY);
+                    vertRotNum += scrollY;
                 }
 
                 /// Horizontal Rotation
                 /// Set the current value to rotate by, to the new value (horRotNum + scrollX)
-                incHorRotNum(scrollX);
+                horRotNum += scrollX;
 
                 /// Set the previous position of the mouse to where the mouse currently is, ready for the dragging
                 prevMouse = mouse;
@@ -184,7 +293,7 @@ namespace RubixCubeSolver.Objects
             }
 
             #region OLD CODE (Arrow Keys Camera)
-            /*
+            
             #region Rotate Scene
 
             #region Vertical Rotation
@@ -222,7 +331,7 @@ namespace RubixCubeSolver.Objects
             #endregion
 
             #endregion
-            //*/
+            
             #endregion
 
             if (input.IsKeyDown(Key.Escape))
@@ -244,41 +353,53 @@ namespace RubixCubeSolver.Objects
                 }   
             }
 
-            #region Debug Abilities
-            /*
-            if (input.IsKeyDown(Key.Number1))
-            {
-                AddGameObjects(new Cube((float)rnd.NextDouble(), new Vector3((float)(rnd.Next(-1000, 1000) / 1000f), (float)(rnd.Next(-1000, 1000) / 1000f), (float)(rnd.Next(-1000, 1000) / 1000f)), new Vector3((float)(rnd.Next(-1000, 1000) / 1000f), (float)(rnd.Next(-1000, 1000) / 1000f), (float)(rnd.Next(-1000, 1000) / 1000f))));
-            }
-
-            if (input.IsKeyDown(Key.Number2))
-            {
-                DisposeGameObjectWithIndex(0);
-            }
-
-            if (input.IsKeyDown(Key.Number3))
-            {
-                DisposeGameObjectWithVAO(myGameObjects.Count);
-            }
-
-            if (input.IsKeyDown(Key.Number4))
-            {
-                DisposeAllGameObjects();
-            }
-
-            if (input.IsKeyDown(Key.Number5))
-            {
-                omitVAOs.Add(1);
-            }
-
-            if (input.IsKeyDown(Key.Number6))
-            {
-                omitVAOs.Clear();
-            }
             //*/
             #endregion
 
             base.OnUpdateFrame(e);
+        }
+
+        /// This function's main purpose is to set the mouse position back to the center of the window
+        /// every time the mouse has moved. So the cursor doesn't end up at the edge of the window where it cannot move
+        /// further out
+        protected override void OnMouseMove(MouseMoveEventArgs e)
+        {
+            if (Focused && !pause) // check to see if the window is focused
+            {
+                Mouse.SetPosition(X + Width / 2f, Y + Height / 2f);
+            }
+
+            else
+            {
+                _firstMove = true;
+            }
+
+            base.OnMouseMove(e);
+        }
+
+        /// In the mouse wheel function we manage all the zooming of the camera
+        /// this is simply done by changing the FOV of the camera
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            if (!Focused || pause)
+            {
+                return;
+            }
+
+            const float sensitivity = 5.0f;
+
+            _camera.Fov -= e.DeltaPrecise * sensitivity;
+
+            base.OnMouseWheel(e);
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            /// Reset the viewport to the new width and height
+            GL.Viewport(0, 0, Width, Height);
+            /// We need to update the aspect ratio once the window has been resized
+            _camera.AspectRatio = Width / (float)Height;
+            base.OnResize(e);
         }
 
         /// <summary>
@@ -299,8 +420,10 @@ namespace RubixCubeSolver.Objects
 
             /// Delete all the resources.
             DisposeAllGameObjects();
+            //fillerCube.DisposeThisGameObject(true);
 
-            _lightingShader.Dispose();
+            /// Delete Shader
+            lightingShader.Dispose();
 
             base.OnUnload(e);
         }

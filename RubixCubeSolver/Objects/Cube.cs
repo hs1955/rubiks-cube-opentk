@@ -119,7 +119,7 @@ namespace RubixCubeSolver.Objects
         /// --- ADDITIONAL FIELDS
         //private static Vector3 color = new Vector3(1.0f, 0.9f, 0.0f); //R G B
 
-        public Cube(Shader shader, float scale = 1.0f, Vector3? position = null, Vector3? color = null) : base(vertices, indices, shader, scale, position, color) { }
+        public Cube(Shader shader, float scale = 1.0f, float horizontalAngle = 0.0f, float verticalAngle = 0.0f, Vector3? position = null, Vector3? color = null) : base(vertices, indices, shader, scale, horizontalAngle, verticalAngle, position, color) { }
 
     }
 }
