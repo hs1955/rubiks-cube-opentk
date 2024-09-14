@@ -1,5 +1,5 @@
 # Rubik's Cube Solver (made with OpenTK)
-My Rubik's Cube Project made with exclusively OpenTK (C# library for OpenGL) and Windows Form App. This repo is a showcase of this project.
+A Rubik's Cube Project made with exclusively OpenTK (C# library for OpenGL) and Windows Form App, made by me (Hamza Salman). This repo is a showcase of this project.
 
 ![My Rubik's Cube Solver](media/rubiks-cube-solver-logo.png)
 
@@ -26,6 +26,10 @@ There's no file/path handling actively used in the code either.
 
 This repository is also archived and read-only. I do not plan to make further changes to this project.
 The Net Menu only has basic error checking, and doesn't check for pieces that can't exist.
+
+## CC0 License
+This project is under the CC0 License, meaning its completely under public domain.
+I have no interest in continuing this project, and would be happy if it helps anyone else in any manner - so create a fork and enjoy :)
 
 ## MP4s showcasing this project:
 
