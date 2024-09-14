@@ -28,12 +28,14 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RubiksCubeSolver));
             this.btnNextStep = new System.Windows.Forms.Button();
             this.btnNextStepFast = new System.Windows.Forms.Button();
             this.btnPrevStep = new System.Windows.Forms.Button();
             this.btnPrevStepFast = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.doesntDoAnythingYetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tpReset = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -50,7 +52,7 @@
             // 
             // btnNextStepFast
             // 
-            this.btnNextStepFast.Location = new System.Drawing.Point(264, 168);
+            this.btnNextStepFast.Location = new System.Drawing.Point(264, 167);
             this.btnNextStepFast.Name = "btnNextStepFast";
             this.btnNextStepFast.Size = new System.Drawing.Size(75, 23);
             this.btnNextStepFast.TabIndex = 1;
@@ -91,9 +93,17 @@
             // 
             // fileToolStripMenuItem
             // 
+            this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.doesntDoAnythingYetToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
+            // 
+            // doesntDoAnythingYetToolStripMenuItem
+            // 
+            this.doesntDoAnythingYetToolStripMenuItem.Name = "doesntDoAnythingYetToolStripMenuItem";
+            this.doesntDoAnythingYetToolStripMenuItem.Size = new System.Drawing.Size(200, 22);
+            this.doesntDoAnythingYetToolStripMenuItem.Text = "Doesn\'t do anything yet";
             // 
             // tpReset
             // 
@@ -110,6 +120,7 @@
             this.Controls.Add(this.btnNextStepFast);
             this.Controls.Add(this.btnNextStep);
             this.Controls.Add(this.menuStrip1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "RubiksCubeSolver";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.RubiksCubeSolver_FormClosing);
@@ -130,6 +141,7 @@
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem tpReset;
+        private System.Windows.Forms.ToolStripMenuItem doesntDoAnythingYetToolStripMenuItem;
     }
 }
 

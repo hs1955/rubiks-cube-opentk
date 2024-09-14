@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(StartingForm));
             this.btnStart = new System.Windows.Forms.Button();
             this.btnExit = new System.Windows.Forms.Button();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
@@ -66,8 +67,9 @@
             this.ClientSize = new System.Drawing.Size(468, 144);
             this.Controls.Add(this.btnExit);
             this.Controls.Add(this.btnStart);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "StartingForm";
-            this.Text = "StartingForm";
+            this.Text = "Rubik\'s Cube Solver";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.StartingForm_FormClosing);
             this.Load += new System.EventHandler(this.StartingForm_Load);
             this.ResumeLayout(false);

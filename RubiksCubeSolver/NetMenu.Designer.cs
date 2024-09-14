@@ -28,15 +28,10 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(NetMenu));
             this.btnSolveNet = new System.Windows.Forms.Button();
             this.btnSolveRandom = new System.Windows.Forms.Button();
             this.SuspendLayout();
-            // 
-            // timer1
-            // 
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // btnSolveNet
             // 
@@ -65,8 +60,9 @@
             this.ClientSize = new System.Drawing.Size(991, 479);
             this.Controls.Add(this.btnSolveRandom);
             this.Controls.Add(this.btnSolveNet);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "NetMenu";
-            this.Text = "NetMenu";
+            this.Text = "Rubik\'s Cube Solver Net Menu";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.NetMenu_FormClosing);
             this.Load += new System.EventHandler(this.NetMenu_Load);
             this.ResumeLayout(false);
@@ -74,8 +70,6 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.Button btnSolveNet;
         private System.Windows.Forms.Button btnSolveRandom;
     }

@@ -235,10 +235,16 @@ namespace RubiksCubeSolver.NetObjects
                     if (netFace.myTiles[j].netTile.BackColor == Color.CadetBlue)
                     {
                         state = 1;
+                        break;
                     }
 
                     colorCount[netFace.myTiles[j].myColor - 1]++;
 
+                }
+
+                if (state != 0)
+                {
+                    break;
                 }
             }
 

@@ -49,6 +49,7 @@ artifacts/
 
 # VS Code
 .vscode/
+*.code-workspace
 
 *_i.c
 *_p.c

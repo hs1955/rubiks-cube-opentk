@@ -1743,10 +1743,8 @@ namespace RubixCubeSolver.Objects
                         /// Invert turn flag = true
                         reverse = true;
 
-                        /// If the final step has been already been completed
-
-                        /// If the previous step or final step has been completed
-                        if (stepNo >= allTurns.Count || turnNo <= -1)
+                        /// If the previous or final step has been already been completed
+                        if (stepNo >= allTurns.Count || (stepNo <= 0 && allTurns[stepNo].Length == 0) || turnNo <= -1)
                         {
                             /// If this is also the first step / batch of turns
                             if (stepNo <= 0)

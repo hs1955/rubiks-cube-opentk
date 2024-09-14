@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
@@ -8,6 +7,7 @@ using static RubiksCubeSolver.RubiksCubeSolver;
 using static RubiksCubeSolver.StartingForm;
 using static RubixCubeSolver.Objects.GameMaster;
 using static RubiksCubeSolver.NetMenu;
+using RubiksCubeSolver;
 
 namespace RubixCubeSolver.Objects
 {
@@ -20,9 +20,6 @@ namespace RubixCubeSolver.Objects
 
         /// Prevent the user from interfering with the Cube while its being solved
         public static bool firstTime = true;
-
-        /// Our Shader
-        private string _shaderFilePath = Path.GetFullPath("OpenGL_Shaders/");
 
         /// Our Lamp Shader
         public static Shader lightingShader;
@@ -45,16 +42,6 @@ namespace RubixCubeSolver.Objects
         /// <param name="e"></param>
         protected override void OnLoad(EventArgs e)
         {
-            /// Setup of shaderFilePath
-            if (_shaderFilePath.Contains("bin\\Debug\\"))
-            {
-                _shaderFilePath = _shaderFilePath.Replace("bin\\Debug\\", "");
-            }
-            if (!Directory.Exists(_shaderFilePath))
-            {
-                throw new DirectoryNotFoundException($"Shader File Directory has not been found\nDirectory: {_shaderFilePath}");
-            }
-
             GL.ClearColor(0.9f, 0.9f, 0.9f, 1.0f);
 
             /// We enable depth testing here.
@@ -65,7 +52,7 @@ namespace RubixCubeSolver.Objects
 
             /// Create Lighting Shader
             /// The lighting shaders uses the lighting.frag shader which is what a large part of this chapter will be about
-            lightingShader = new Shader(_shaderFilePath + "shader.vert", _shaderFilePath + "lighting.frag");
+            lightingShader = new Shader(Resource1.shader_vert, Resource1.lighting_frag);
 
             /// We initialize the camera so that it is 3 units back from where the rectangle is and give it the proper aspect ratio
             _camera = new Camera(Vector3.UnitZ * 3, Width / (float)Height);

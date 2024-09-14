@@ -22,28 +22,23 @@ namespace RubixCubeSolver.Objects
         /// <summary>
         /// There's two ints: vertexShader and fragmentShader; they are the handles to the individual shaders. They're defined in the constructor because we won't need the individual shaders after the full shader program is finished. 
         /// </summary>
-        /// <param name="vertPath"> The filepath to the Vertex Shader </param>
-        /// <param name="fragPath"> The filepath to the Fragment Shader </param>
-        public Shader(string vertPath, string fragPath)
+        /// <param name="vertFile"> The file contents of the Vertex Shader </param>
+        /// <param name="fragFile"> The file contents of the Fragment Shader </param>
+        public Shader(string vertFile, string fragFile)
         {
             #region Load vertex and fragment shaders and compile
-
-            /// LoadSource is a simple function that just loads all text from the file whose path is given.
-            var shaderSource = LoadSource(vertPath);
-
             /// GL.CreateShader will create an empty shader (obviously). The ShaderType enum denotes which type of shader will be created.
             var vertexShader = GL.CreateShader(ShaderType.VertexShader);
 
             /// Now, bind the GLSL source code
-            GL.ShaderSource(vertexShader, shaderSource);
+            GL.ShaderSource(vertexShader, vertFile);
 
             /// And then compile
             CompileShader(vertexShader);
 
             /// We do the same for the fragment shader
-            shaderSource = LoadSource(fragPath);
             var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(fragmentShader, shaderSource);
+            GL.ShaderSource(fragmentShader, fragFile);
             CompileShader(fragmentShader);
 
             #endregion

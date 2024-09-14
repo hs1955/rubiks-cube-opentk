@@ -15,7 +15,6 @@ namespace RubiksCubeSolver
         {
             InitializeComponent();
         }
-
         private void NetMenu_FormClosing(object sender, FormClosingEventArgs e)
         {
             closeProgram = true;
@@ -39,27 +38,18 @@ namespace RubiksCubeSolver
             
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            if (!runTimer)
-            {
-                return;
-            }
-        }
-
         private void btnSolveNet_Click(object sender, EventArgs e)
         {
-            //*
-            if (!(net.IsNetValid() == "Valid"))
+            string retMsg = net.IsNetValid();
+            if (retMsg != "Valid")
             {
+                MessageBox.Show(retMsg, "Rubik's Cube Solver Net Menu Help");
                 return;
             }
-            //*/
 
             colors = net.FormColorMatrix();
 
             Open3DRubiksCubeMenu();
-            
         }
 
         private void btnSolveRandom_Click(object sender, EventArgs e)
